@@ -1,6 +1,12 @@
 @description('Name of the API Management service')
 param apimServiceName string = 'apim-${uniqueString(resourceGroup().id)}'
 
+@description('SKU name for the API Management service')
+param apimSkuName string = 'Basic'
+
+@description('Capacity of the API Management service SKU')
+param apimSkuCapacity int = 1
+
 @description('Email address of the API Management publisher')
 param publisherEmail string
 
@@ -16,5 +22,7 @@ module apiManagement 'modules/apiManagement.bicep' = {
     location: location
     publisherEmail: publisherEmail
     publisherName: publisherName
+    skuName: apimSkuName
+    skuCapacity: apimSkuCapacity
   }
 }

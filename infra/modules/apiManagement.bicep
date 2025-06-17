@@ -2,13 +2,15 @@ param apimServiceName string
 param location string
 param publisherEmail string
 param publisherName string
+param skuName string = 'Basic'
+param skuCapacity int = 1
 
 resource apiManagementService 'Microsoft.ApiManagement/service@2024-06-01-preview' = {
   name: apimServiceName
   location: location
   sku: {
-    name: 'Basic'
-    capacity: 1
+    name: skuName
+    capacity: skuCapacity
   }
   identity: {
     type: 'SystemAssigned'
