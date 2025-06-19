@@ -1,0 +1,4 @@
+customerId,basePricePerKwh,taxPerKwh,vatPerKwh,gridChargePerDay,taxDiscountPerDay,basePricePerM3,taxPerM3,vatPerM3,gridChargePerDayGas,currency
+12345,0.1079,0.1016,0.0439,1.3039,1.74,0.4393,0.5781,0.213679,0.6742,EUR
+23456,0.1285,0.1229,0.0527,0.45,1.74,0.5103,0.5781,0.228564,0.6689,EUR
+34567,0.00,0.00,0.00,0.00,0.00,0.5103,0.5781,0.228564,0.6689,EUR

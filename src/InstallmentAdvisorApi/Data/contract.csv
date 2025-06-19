@@ -1,0 +1,4 @@
+customerId,startDate,endDate,type,energyTypes,status
+12345,2023-01-01,2026-01-01,fixed,"electricity;gas",active
+23456,2025-01-01,2026-01-01,fixed,"electricity;gas",active
+34567,2025-01-01,2026-01-01,variable,"gas",active
