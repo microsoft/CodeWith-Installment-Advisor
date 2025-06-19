@@ -1,5 +1,7 @@
+using Azure.AI.Agents.Persistent;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
 using OrchestratorAPI.Agents;
 
 namespace OrchestratorAPI.Controllers
@@ -26,12 +28,27 @@ namespace OrchestratorAPI.Controllers
         }
 
         [HttpPost(Name = "chat")]
+        [Consumes("application/json")]
         [Produces("application/json")]
         public async Task<IActionResult> Chat([FromBody] ChatRequest chatRequest)
         {
 
-            var agent = new OrchestratorAgent(_kernel);
-            object response = await agent.ChatAsync(chatRequest.Message);
+            // Create sub-agents.
+            ChatCompletionAgent scenarioAgent = new ScenarioAgent().GetAgent(_kernel);
+            ChatCompletionAgent visualizationAgent = new VisualizationAgent().GetAgent(_kernel);
+
+            // Create orchestrator agent.
+            ChatCompletionAgent orchestratorAgent = new OrchestratorAgent().GetAgent(_kernel, [scenarioAgent, visualizationAgent]);
+
+            // Chat with orchestrator agent.
+            AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message).FirstAsync();
+
+            // Create response object.
+            var response = new
+            {
+                Message = chatResponse.Message.Content,
+                ThreadId = chatResponse.Thread.Id,
+            };
 
             // Return response string as json ok response.
             return Ok(response);

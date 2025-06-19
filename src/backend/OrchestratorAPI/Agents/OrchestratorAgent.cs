@@ -1,21 +1,29 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.Agents.Orchestration.Handoff;
-using Microsoft.SemanticKernel.Agents.Runtime.InProcess;
-using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace OrchestratorAPI.Agents
 {
     public class OrchestratorAgent
     {
-        private readonly ChatCompletionAgent _agent;
-        private readonly HandoffOrchestration _orchestration;
-        private readonly ChatHistory history = [];
-
-        public OrchestratorAgent(Kernel kernel)
+        public ChatCompletionAgent GetAgent(Kernel kernel, List<ChatCompletionAgent> agents)
         {
             Kernel agentKernel = kernel.Clone();
-            _agent = new()
+
+            // Loop over agents and register them in the agent kernel
+            if(agents != null && agents.Count > 0)
+            {
+                List<KernelFunction> subAgents = [];
+                foreach (ChatCompletionAgent agent in agents)
+                {
+                    subAgents.Add(AgentKernelFunctionFactory.CreateFromAgent(agent));
+                }
+
+                KernelPlugin agentPlugin =KernelPluginFactory.CreateFromFunctions("AgentsPlugin", subAgents);
+                agentKernel.Plugins.Add(agentPlugin);
+            }
+            agentKernel.FunctionInvocationFilters.Add(new FunctionCallFilter());
+
+            return new()
             {
                 Name = "orchestratoragent",
                 Description = "This agent orchestrates the conversation between the user and the AI agents.",
@@ -25,50 +33,21 @@ namespace OrchestratorAPI.Agents
                     Combine the results of the other agents but do not include the steps you took in between.
                     """,
                 Kernel = agentKernel,
+                Arguments = new KernelArguments(new PromptExecutionSettings() { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
             };
 
-            // Initialize agents
-            CapitalAgent capitalAgent = new(kernel);
-            FoodAgent foodAgent = new(kernel);
-
-            // Setup handoff orchestration
-            var handoffs = OrchestrationHandoffs
-                .StartWith(_agent)
-                .Add(_agent, capitalAgent.Agent, "Transfer to this agent to get answers on capital related questions")
-                .Add(_agent, foodAgent.Agent, "Transfer to this agent to get answers on food related questions")
-                .Add(capitalAgent.Agent, _agent, "Transfer to this agent if the question is not about capital cities.")
-                .Add(foodAgent.Agent, _agent, "Transfer to this agent if the question is not about food.");
-
-            _orchestration = new HandoffOrchestration(
-                handoffs,
-                _agent,
-                capitalAgent.Agent,
-                foodAgent.Agent)
-                {
-                    ResponseCallback = ResponseCallbackFunction,
-                    
-                };
         }
 
-        public async Task<object> ChatAsync(string input)
+        public sealed class FunctionCallFilter() : IFunctionInvocationFilter
         {
-            InProcessRuntime runtime = new();
-            await runtime.StartAsync();
-            var result = await _orchestration.InvokeAsync(input, runtime);
-            string output = await result.GetValueAsync();
-            var returnobject = new
+            public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
             {
-                response = output,
-                steps = history
-            };
-            return returnobject;
+                Console.WriteLine($"FunctionInvoking - {context.Function.PluginName}.{context.Function.Name}");
 
-        }
+                await next(context);
 
-        ValueTask ResponseCallbackFunction(ChatMessageContent response)
-        {
-            history.Add(response);
-            return ValueTask.CompletedTask;
+                Console.WriteLine($"FunctionInvoked - {context.Function.PluginName}.{context.Function.Name}");
+            }
         }
     }
 }

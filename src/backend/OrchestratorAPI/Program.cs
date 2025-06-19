@@ -1,4 +1,7 @@
+using Azure.AI.Agents.Persistent;
+using Azure.Identity;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents.AzureAI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,7 +9,6 @@ builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
 
-// Semantic kernel
 builder.Services.AddKernel().AddAzureOpenAIChatCompletion(
     deploymentName: builder.Configuration["modelName"]!,
     endpoint: builder.Configuration["baseUrl"]!,
