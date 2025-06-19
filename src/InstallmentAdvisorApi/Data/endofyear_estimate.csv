@@ -1,0 +1,5 @@
+customerId,year,electricity_usage,electricity_unit,electricity_totalCost,gas_usage,gas_unit,gas_totalCost,total,currency
+12345,2024,1790,kWh,950,800,m3,1100,2050,EUR
+12345,2025,1800,kWh,297,800,m3,1240,1537,EUR
+23456,2025,4270,kWh,1140,1990,m3,1990,3130,EUR
+34567,2025,0,,0,2044,m3,2936,2936,EUR
