@@ -1,4 +1,5 @@
 using Azure.AI.Agents.Persistent;
+using Domain;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
@@ -6,6 +7,7 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using ModelContextProtocol.Client;
+using OpenAI.Assistants;
 using OrchestratorAPI.Agents;
 
 namespace OrchestratorAPI.Controllers
@@ -18,7 +20,7 @@ namespace OrchestratorAPI.Controllers
         private readonly ILogger<ChatController> _logger;
         private readonly Kernel _kernel;
         private readonly PersistentAgentsClient _aiFoundryClient;
-        private readonly IMcpClient _mcpClient;
+        private readonly List<McpClientTool> _tools;
         private readonly IHistoryRepository _historyRepository;
 
         public class ChatRequest
@@ -28,12 +30,12 @@ namespace OrchestratorAPI.Controllers
             public string? ThreadId { get; set; }
         }
 
-        public ChatController(ILogger<ChatController> logger, Kernel kernel, PersistentAgentsClient aiFoundryClient, IMcpClient mcpClient, IHistoryRepository historyRepository)
+        public ChatController(ILogger<ChatController> logger, Kernel kernel, PersistentAgentsClient aiFoundryClient, List<McpClientTool> tools, IHistoryRepository historyRepository)
         {
             _logger = logger;
             _kernel = kernel;
             _aiFoundryClient = aiFoundryClient;
-            _mcpClient = mcpClient;
+            _tools = tools;
             _historyRepository = historyRepository;
         }
 
@@ -43,19 +45,29 @@ namespace OrchestratorAPI.Controllers
         public async Task<IActionResult> Chat([FromBody] ChatRequest chatRequest)
         {
 
+            ChatHistoryAgentThread agentThread = new ChatHistoryAgentThread();
+            // If threadId is provided, retrieve chat history.
+            if (!string.IsNullOrEmpty(chatRequest.ThreadId))
+            {
+                List<ChatMessage> chatHistory = await _historyRepository.GetHistoryAsync(chatRequest.UserId, chatRequest.ThreadId);
+                if (chatHistory.Count > 0)
+                {
+                    agentThread = buildAgentThread(chatHistory);
+                }
+            }
+
             // Create sub-agents.
-            FoundryAgentFactory visualizationAgentFactory = new();
-            ChatCompletionAgent scenarioAgent = await ScenarioAgentFactory.CreateAgentAsync(_kernel, _mcpClient);
-            AzureAIAgent jokeAgent = await visualizationAgentFactory.CreateAgentAsync(_aiFoundryClient);
+            ChatCompletionAgent scenarioAgent = ScenarioAgentFactory.CreateAgent(_kernel, _tools);
+            AzureAIAgent jokeAgent = await FoundryAgentFactory.CreateAgentAsync(_aiFoundryClient);
 
             // Create orchestrator agent.
             ChatCompletionAgent orchestratorAgent = OrchestratorAgentFactory.CreateAgent(_kernel, [scenarioAgent, jokeAgent]);
 
             // Chat with orchestrator agent.
-            AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message).FirstAsync();
+            AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message, agentThread).FirstAsync();
 
-            // Delete 
-            await visualizationAgentFactory.DeleteAgentAsync(_aiFoundryClient);
+            // Delete agent.
+            await FoundryAgentFactory.DeleteAgentAsync(_aiFoundryClient, jokeAgent.Id);
             
 
             // Create response object.
@@ -66,12 +78,54 @@ namespace OrchestratorAPI.Controllers
             };
 
             // Save chat history to repository.
-            //await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatRequest.Message, "user");
-            //await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatResponse.Message.Content!, "assistant");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatRequest.Message, "user");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatResponse.Message.Content!, "assistant");
 
             // Return response string as json ok response.
             return Ok(response);
 
+        }
+
+        [HttpDelete("/chat/{threadId}")]
+        public async Task<IActionResult> DeleteChat([FromRoute] string threadId, [FromQuery] string userId)
+        {
+            if (string.IsNullOrEmpty(threadId) || string.IsNullOrEmpty(userId))
+            {
+                return BadRequest("ThreadId and UserId are required.");
+            }
+            // Delete chat history from repository.
+            bool deleted = await _historyRepository.DeleteHistoryAsync(userId, threadId);
+
+            if (deleted)
+            {
+                return Ok();
+            }
+            else
+            {
+                return NotFound("Chat history not found for the provided ThreadId and UserId.");
+            }
+
+        }
+
+        private ChatHistoryAgentThread buildAgentThread (List<ChatMessage> messages)
+        {
+            ChatHistory history = new ChatHistory();
+            foreach (ChatMessage message in messages)
+            {
+                if (message.Role == "user")
+                {
+                    history.AddUserMessage(message.Content);
+                }
+                else if (message.Role == "assistant")
+                {
+                    history.AddAssistantMessage(message.Content);
+                }
+                else if (message.Role == "system")
+                {
+                    history.AddSystemMessage(message.Content);
+                }
+            }
+            return new ChatHistoryAgentThread(history);
         }
     }
 }

@@ -6,13 +6,12 @@ namespace OrchestratorAPI.Agents
 {
     public class ScenarioAgentFactory
     {
-        public static async Task<ChatCompletionAgent> CreateAgentAsync(Kernel kernel, IMcpClient? mcpClient)
+        public static ChatCompletionAgent CreateAgent(Kernel kernel, List<McpClientTool>? tools)
         {
             Kernel agentKernel = kernel.Clone();
 
-            if(mcpClient != null)
+            if(tools != null)
             {
-                var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
                 agentKernel.Plugins.AddFromFunctions("MCP", tools.Select(tool => tool.AsKernelFunction()));
             }
 
