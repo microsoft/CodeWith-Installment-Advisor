@@ -6,7 +6,7 @@ namespace OrchestratorAPI.Agents
 {
     public class ScenarioAgentFactory
     {
-        public async Task<ChatCompletionAgent> GetAgentAsync(Kernel kernel, IMcpClient? mcpClient)
+        public static async Task<ChatCompletionAgent> CreateAgentAsync(Kernel kernel, IMcpClient? mcpClient)
         {
             Kernel agentKernel = kernel.Clone();
 

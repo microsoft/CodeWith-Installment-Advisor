@@ -5,7 +5,7 @@ namespace OrchestratorAPI.Agents
 {
     public class OrchestratorAgentFactory
     {
-        public ChatCompletionAgent GetAgent(Kernel kernel, List<Agent> agents)
+        public static ChatCompletionAgent CreateAgent(Kernel kernel, List<Agent> agents)
         {
             Kernel agentKernel = kernel.Clone();
 

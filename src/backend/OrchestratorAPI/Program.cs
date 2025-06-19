@@ -1,9 +1,11 @@
 using Azure.AI.Agents.Persistent;
 using Azure.Identity;
+using Microsoft.Azure.Cosmos;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using ModelContextProtocol.Client;
 using OrchestratorAPI.Helpers;
+using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,25 @@ var mcpClient = await McpClientFactory.CreateAsync(
         }
     )
 );
+
+// Inject cosmos history repository.
+builder.Services.AddSingleton(sp =>
+{
+    string accountEndpoint = builder.Configuration["cosmosAccountEndpoint"]!;
+    string databaseName = builder.Configuration["cosmosDatabaseName"]!;
+    string containerName = builder.Configuration["cosmosContainerName"]!;
+
+    // Create and configure CosmosClientOptions
+    var cosmosClientOptions = new CosmosClientOptions
+    {
+        ConnectionMode = ConnectionMode.Direct,
+        RequestTimeout = TimeSpan.FromSeconds(30)
+    };
+    var client = new CosmosClient(accountEndpoint, azureCredential, cosmosClientOptions);
+    var database = client.GetDatabase(databaseName);
+    return database.GetContainer(containerName);
+});
+builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
 
 builder.Services.AddSingleton(mcpClient);

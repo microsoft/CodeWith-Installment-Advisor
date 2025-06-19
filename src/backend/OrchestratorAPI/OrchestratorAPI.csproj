@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.53.0-preview.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.57.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.57.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.57.0" />
@@ -25,6 +26,10 @@
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.57.0-preview" />
     <PackageReference Include="ModelContextProtocol" Version="0.2.0-preview.3" />
     <PackageReference Include="ModelContextProtocol-SemanticKernel" Version="0.0.1-preview-18" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,5 @@
 ﻿using Azure.AI.Agents.Persistent;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.AzureAI;
-using System.Reflection;
 
 namespace OrchestratorAPI.Agents
 {
@@ -10,7 +7,7 @@ namespace OrchestratorAPI.Agents
     {
 
         private string? _agentId; 
-        public async Task<AzureAIAgent> GetAgentAsync(PersistentAgentsClient client)
+        public async Task<AzureAIAgent> CreateAgentAsync(PersistentAgentsClient client)
         {
             string instructions = """
                 You are an agent that provides energy jokes to the user.
@@ -25,6 +22,16 @@ namespace OrchestratorAPI.Agents
             );
 
             // Set agentID for later deletion
+            _agentId = agentDefinition.Id;
+
+            return new(agentDefinition, client);
+        }
+
+        public async Task<AzureAIAgent> GetAgentAsync(PersistentAgentsClient client, string agentId)
+        {
+
+            PersistentAgent agentDefinition = await client.Administration.GetAgentAsync(agentId);
+
             _agentId = agentDefinition.Id;
 
             return new(agentDefinition, client);
