@@ -110,8 +110,11 @@ namespace OrchestratorAPI.Controllers
         private ChatHistoryAgentThread buildAgentThread (List<ChatMessage> messages)
         {
             ChatHistory history = new ChatHistory();
+            string threadId = messages[0].ThreadId;
             foreach (ChatMessage message in messages)
             {
+                // Fill thread id if not filled.
+
                 if (message.Role == "user")
                 {
                     history.AddUserMessage(message.Content);
@@ -125,7 +128,7 @@ namespace OrchestratorAPI.Controllers
                     history.AddSystemMessage(message.Content);
                 }
             }
-            return new ChatHistoryAgentThread(history);
+            return new ChatHistoryAgentThread(history, threadId);
         }
     }
 }

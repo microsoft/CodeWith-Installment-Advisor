@@ -40,12 +40,19 @@ namespace Infrastructure
             {
                 return false; // No messages to delete
             }
-
+            
+            var batch = _container.CreateTransactionalBatch(new PartitionKey(userId));
+            
             foreach (ChatMessage message in messages)
             {
-                await _container.DeleteItemAsync<ChatMessage>(message.Id, new PartitionKey(userId));
+                batch.DeleteItem(message.Id);
             }
-
+            
+            var batchResponse = await batch.ExecuteAsync();
+            if (!batchResponse.IsSuccessStatusCode)
+            {
+                throw new Exception("Failed to delete messages in bulk.");
+            }
             return true;
         }
 
