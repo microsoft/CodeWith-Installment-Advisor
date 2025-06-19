@@ -30,7 +30,7 @@ namespace OrchestratorAPI.Agents
                 Instructions = """
                     You are an orchestrator agent that manages the conversation flow between different agents.
                     You will delegate tasks to other agents based on the user's input, consulting multiple agents if necessary.
-                    If the user asks questions about energy, use the scenario agent to provide detailed information about energy consumption scenarios.
+                    If the user asks questions about energy usage, installment amounts etc., use the scenario agent to provide detailed information about energy consumption scenarios.
                     If the user asks for a joke, use the joke agent to provide a humorous energy-related joke.
                     """,
                 Kernel = agentKernel,

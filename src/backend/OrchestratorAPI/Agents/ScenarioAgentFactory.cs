@@ -13,7 +13,7 @@ namespace OrchestratorAPI.Agents
             if(mcpClient != null)
             {
                 var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-                kernel.Plugins.AddFromFunctions("MCP", tools.Select(tool => tool.AsKernelFunction()));
+                agentKernel.Plugins.AddFromFunctions("MCP", tools.Select(tool => tool.AsKernelFunction()));
             }
 
             return new ChatCompletionAgent
@@ -22,7 +22,7 @@ namespace OrchestratorAPI.Agents
                 Description = "This agent handles questions about energy consumption scenarios like installment amounts.",
                 Instructions = """
                     You are a specialized agent that provides information about energy consumption scenarios.
-                    When asked about energy consumption, respond with relevant information about the specific scenario.
+                    When asked about energy consumption, usage or installment amounts, respond with relevant information about the specific scenario.
                     For example, if asked about installment amounts, provide the calculated installment amount based on the given parameters.
                 """,
                 Kernel = agentKernel,

@@ -39,6 +39,7 @@ var mcpClient = await McpClientFactory.CreateAsync(
     )
 );
 
+
 builder.Services.AddSingleton(mcpClient);
 
 
