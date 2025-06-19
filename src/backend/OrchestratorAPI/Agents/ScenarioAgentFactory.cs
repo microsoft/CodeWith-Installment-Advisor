@@ -1,13 +1,21 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
+using ModelContextProtocol.Client;
 
 namespace OrchestratorAPI.Agents
 {
-    public class ScenarioAgent
+    public class ScenarioAgentFactory
     {
-        public ChatCompletionAgent GetAgent(Kernel kernel)
+        public async Task<ChatCompletionAgent> GetAgentAsync(Kernel kernel, IMcpClient? mcpClient)
         {
             Kernel agentKernel = kernel.Clone();
+
+            if(mcpClient != null)
+            {
+                var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+                kernel.Plugins.AddFromFunctions("MCP", tools.Select(tool => tool.AsKernelFunction()));
+            }
+
             return new ChatCompletionAgent
             {
                 Name = "scenarioagent",
@@ -17,7 +25,9 @@ namespace OrchestratorAPI.Agents
                     When asked about energy consumption, respond with relevant information about the specific scenario.
                     For example, if asked about installment amounts, provide the calculated installment amount based on the given parameters.
                 """,
-                Kernel = agentKernel
+                Kernel = agentKernel,
+                Arguments = new KernelArguments(new PromptExecutionSettings() { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
+
             };
         }
     }

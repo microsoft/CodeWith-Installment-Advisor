@@ -3,17 +3,17 @@ using Microsoft.SemanticKernel.Agents;
 
 namespace OrchestratorAPI.Agents
 {
-    public class OrchestratorAgent
+    public class OrchestratorAgentFactory
     {
-        public ChatCompletionAgent GetAgent(Kernel kernel, List<ChatCompletionAgent> agents)
+        public ChatCompletionAgent GetAgent(Kernel kernel, List<Agent> agents)
         {
             Kernel agentKernel = kernel.Clone();
 
             // Loop over agents and register them in the agent kernel
             if(agents != null && agents.Count > 0)
             {
-                List<KernelFunction> subAgents = [];
-                foreach (ChatCompletionAgent agent in agents)
+                List<KernelFunction> subAgents = new List<KernelFunction>();
+                foreach (Agent agent in agents)
                 {
                     subAgents.Add(AgentKernelFunctionFactory.CreateFromAgent(agent));
                 }
@@ -30,7 +30,8 @@ namespace OrchestratorAPI.Agents
                 Instructions = """
                     You are an orchestrator agent that manages the conversation flow between different agents.
                     You will delegate tasks to other agents based on the user's input, consulting multiple agents if necessary.
-                    Combine the results of the other agents but do not include the steps you took in between.
+                    If the user asks questions about energy, use the scenario agent to provide detailed information about energy consumption scenarios.
+                    If the user asks for a joke, use the joke agent to provide a humorous energy-related joke.
                     """,
                 Kernel = agentKernel,
                 Arguments = new KernelArguments(new PromptExecutionSettings() { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
@@ -42,11 +43,11 @@ namespace OrchestratorAPI.Agents
         {
             public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
             {
-                Console.WriteLine($"FunctionInvoking - {context.Function.PluginName}.{context.Function.Name}");
+                Console.WriteLine($"Orchestrator handoff - {context.Function.PluginName}.{context.Function.Name}");
 
                 await next(context);
 
-                Console.WriteLine($"FunctionInvoked - {context.Function.PluginName}.{context.Function.Name}");
+                Console.WriteLine($"Orchestrator handoff completed - {context.Function.PluginName}.{context.Function.Name}");
             }
         }
     }

@@ -2,6 +2,8 @@ using Azure.AI.Agents.Persistent;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.AzureAI;
+using ModelContextProtocol.Client;
 using OrchestratorAPI.Agents;
 
 namespace OrchestratorAPI.Controllers
@@ -13,6 +15,8 @@ namespace OrchestratorAPI.Controllers
 
         private readonly ILogger<ChatController> _logger;
         private readonly Kernel _kernel;
+        private readonly PersistentAgentsClient _aiFoundryClient;
+        private readonly IMcpClient _mcpClient;
 
         public class ChatRequest
         {
@@ -21,10 +25,12 @@ namespace OrchestratorAPI.Controllers
             public string? ThreadId { get; set; }
         }
 
-        public ChatController(ILogger<ChatController> logger, Kernel kernel)
+        public ChatController(ILogger<ChatController> logger, Kernel kernel, PersistentAgentsClient aiFoundryClient, IMcpClient mcpClient)
         {
             _logger = logger;
             _kernel = kernel;
+            _aiFoundryClient = aiFoundryClient;
+            _mcpClient = mcpClient;
         }
 
         [HttpPost(Name = "chat")]
@@ -34,15 +40,19 @@ namespace OrchestratorAPI.Controllers
         {
 
             // Create sub-agents.
-            ChatCompletionAgent scenarioAgent = new ScenarioAgent().GetAgent(_kernel);
-            ChatCompletionAgent visualizationAgent = new VisualizationAgent().GetAgent(_kernel);
+            FoundryAgentFactory visualizationAgentFactory = new FoundryAgentFactory();
+            ChatCompletionAgent scenarioAgent = await new ScenarioAgentFactory().GetAgentAsync(_kernel, _mcpClient);
+            AzureAIAgent jokeAgent = await visualizationAgentFactory.GetAgentAsync(_aiFoundryClient);
 
             // Create orchestrator agent.
-            ChatCompletionAgent orchestratorAgent = new OrchestratorAgent().GetAgent(_kernel, [scenarioAgent, visualizationAgent]);
+            ChatCompletionAgent orchestratorAgent = new OrchestratorAgentFactory().GetAgent(_kernel, [scenarioAgent, jokeAgent]);
 
             // Chat with orchestrator agent.
             AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message).FirstAsync();
 
+            // Delete 
+            await visualizationAgentFactory.DeleteAgentAsync(_aiFoundryClient);
+            
             // Create response object.
             var response = new
             {
