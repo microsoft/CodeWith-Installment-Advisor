@@ -66,8 +66,8 @@ namespace OrchestratorAPI.Controllers
             };
 
             // Save chat history to repository.
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatRequest.Message, "user");
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatResponse.Message.Content!, "assistant");
+            //await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatRequest.Message, "user");
+            //await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, chatResponse.Thread.Id!, chatResponse.Message.Content!, "assistant");
 
             // Return response string as json ok response.
             return Ok(response);
