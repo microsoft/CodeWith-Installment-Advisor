@@ -1,6 +1,6 @@
-using System;
+using InstallmentAdvisor.DataApi.Models;
 
-namespace InstallmentAdvisorApi.Models
+namespace InstallmentAdvisor.DataApi.Models
 {
     public class Installment
     {

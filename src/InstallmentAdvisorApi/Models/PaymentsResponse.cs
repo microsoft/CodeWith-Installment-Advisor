@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace InstallmentAdvisorApi.Models
+namespace InstallmentAdvisor.DataApi.Models
 {
     public class PaymentsResponse
     {
