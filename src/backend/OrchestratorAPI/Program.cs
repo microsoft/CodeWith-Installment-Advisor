@@ -16,12 +16,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
 
-builder.Services.AddKernel().AddAzureOpenAIChatCompletion(
-    deploymentName: builder.Configuration["modelName"]!,
-    endpoint: builder.Configuration["baseUrl"]!,
-    apiKey: builder.Configuration["apiKey"]!,
-    apiVersion: "2025-01-01-preview");
-
+builder.Services.AddKernel().AddAzureOpenAIChatCompletion(builder.Configuration["modelName"]!, endpoint: builder.Configuration["openAiBaseUrl"]!,azureCredential);
 
 // Inject foundry client for creating agents.
 PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder.Configuration["aiFoundryProjectEndpoint"]!, azureCredential);
@@ -41,6 +36,10 @@ var mcpClient = await McpClientFactory.CreateAsync(
     )
 );
 
+var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+
+builder.Services.AddSingleton(tools.ToList());
+
 // Inject cosmos history repository.
 builder.Services.AddSingleton(sp =>
 {
@@ -59,10 +58,6 @@ builder.Services.AddSingleton(sp =>
     return database.GetContainer(containerName);
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
-
-
-builder.Services.AddSingleton(mcpClient);
-
 
 var app = builder.Build();
 

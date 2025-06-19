@@ -1,11 +1,6 @@
 ﻿using Domain;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure
 {
@@ -38,9 +33,27 @@ namespace Infrastructure
             return messages;
         }
 
-        public Task<bool> DeleteHistoryAsync(string userId, string threadId)
+        public async Task<bool> DeleteHistoryAsync(string userId, string threadId)
         {
-            throw new NotImplementedException();
+            var messages = await this.GetHistoryAsync(userId, threadId);
+            if (messages.Count == 0)
+            {
+                return false; // No messages to delete
+            }
+            
+            var batch = _container.CreateTransactionalBatch(new PartitionKey(userId));
+            
+            foreach (ChatMessage message in messages)
+            {
+                batch.DeleteItem(message.Id);
+            }
+            
+            var batchResponse = await batch.ExecuteAsync();
+            if (!batchResponse.IsSuccessStatusCode)
+            {
+                throw new Exception("Failed to delete messages in bulk.");
+            }
+            return true;
         }
 
         public async Task<bool> AddMessageToHistoryAsync(string userId, string threadId, string message, string role)

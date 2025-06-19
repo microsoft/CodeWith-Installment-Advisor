@@ -6,8 +6,7 @@ namespace OrchestratorAPI.Agents
     public class FoundryAgentFactory
     {
 
-        private string? _agentId; 
-        public async Task<AzureAIAgent> CreateAgentAsync(PersistentAgentsClient client)
+        public static async Task<AzureAIAgent> CreateAgentAsync(PersistentAgentsClient client)
         {
             string instructions = """
                 You are an agent that provides energy jokes to the user.
@@ -21,27 +20,23 @@ namespace OrchestratorAPI.Agents
                 tools: [new CodeInterpreterToolDefinition()]
             );
 
-            // Set agentID for later deletion
-            _agentId = agentDefinition.Id;
-
             return new(agentDefinition, client);
         }
 
-        public async Task<AzureAIAgent> GetAgentAsync(PersistentAgentsClient client, string agentId)
+        public static async Task<AzureAIAgent> GetAgentAsync(PersistentAgentsClient client, string agentId)
         {
 
             PersistentAgent agentDefinition = await client.Administration.GetAgentAsync(agentId);
 
-            _agentId = agentDefinition.Id;
 
             return new(agentDefinition, client);
         }
 
-        public async Task<bool> DeleteAgentAsync(PersistentAgentsClient client)
+        public static async Task<bool> DeleteAgentAsync(PersistentAgentsClient client, string agentId)
         {
-            if (!string.IsNullOrEmpty(_agentId))
+            if (!string.IsNullOrEmpty(agentId))
             {
-                return await client.Administration.DeleteAgentAsync(_agentId);
+                return await client.Administration.DeleteAgentAsync(agentId);
             }
             
             return false;
