@@ -1,4 +1,6 @@
-namespace InstallmentAdvisorApi.Models
+using InstallmentAdvisor.DataApi.Models;
+
+namespace InstallmentAdvisor.DataApi.Models
 {
     public class ContractResponse
     {

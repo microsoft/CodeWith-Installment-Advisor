@@ -1,8 +1,10 @@
-using InstallmentAdvisorApi.Models;
-using InstallmentAdvisorApi.Repositories;
-using InstallmentAdvisorApi.Services;
+using InstallmentAdvisor.DataApi.Models;
+using InstallmentAdvisor.DataApi.Repositories;
+using InstallmentAdvisor.DataApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
 
 builder.Services.AddSingleton<ICustomerRepository>(sp => new CustomerRepository("Data"));
 builder.Services.AddSingleton<ICustomerService, CustomerService>();
@@ -10,6 +12,8 @@ builder.Services.AddSingleton<ICustomerService, CustomerService>();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 if(app.Environment.IsDevelopment())
 {

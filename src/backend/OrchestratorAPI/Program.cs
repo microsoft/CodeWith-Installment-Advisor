@@ -9,6 +9,8 @@ using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 DefaultAzureCredentialOptions azureCredentialOptions = CredentialHelper.GetDefaultAzureCredentialOptions(builder.Environment.EnvironmentName);
 var azureCredential = new DefaultAzureCredential(azureCredentialOptions);
 
@@ -60,6 +62,8 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

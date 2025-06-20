@@ -3,7 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>InstallmentAdvisorApi</RootNamespace>
+    <RootNamespace>InstallmentAdvisor.DataApi</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <None Update="Data\contract.csv">
@@ -28,5 +28,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\InstallmentAdvisor.ServiceDefaults\InstallmentAdvisor.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>
