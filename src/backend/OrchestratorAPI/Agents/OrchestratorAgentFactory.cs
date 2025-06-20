@@ -1,11 +1,12 @@
-﻿using Microsoft.SemanticKernel;
+﻿using Domain;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 
 namespace OrchestratorAPI.Agents
 {
     public class OrchestratorAgentFactory
     {
-        public static ChatCompletionAgent CreateAgent(Kernel kernel, List<Agent> agents)
+        public static ChatCompletionAgent CreateAgent(Kernel kernel, List<Agent> agents, List<ToolCall>? toolCallList)
         {
             Kernel agentKernel = kernel.Clone();
 
@@ -21,7 +22,11 @@ namespace OrchestratorAPI.Agents
                 KernelPlugin agentPlugin =KernelPluginFactory.CreateFromFunctions("AgentsPlugin", subAgents);
                 agentKernel.Plugins.Add(agentPlugin);
             }
-            agentKernel.FunctionInvocationFilters.Add(new FunctionCallFilter());
+
+            if(toolCallList != null)
+            {
+                agentKernel.AutoFunctionInvocationFilters.Add(new AutoFunctionInvocationFilter(toolCallList));
+            }
 
             return new()
             {
@@ -39,15 +44,27 @@ namespace OrchestratorAPI.Agents
 
         }
 
-        public sealed class FunctionCallFilter() : IFunctionInvocationFilter
+        public class AutoFunctionInvocationFilter(List<ToolCall> toolCallList) : IAutoFunctionInvocationFilter
         {
-            public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
+            public async Task OnAutoFunctionInvocationAsync(AutoFunctionInvocationContext context, Func<AutoFunctionInvocationContext, Task> next)
             {
-                Console.WriteLine($"Orchestrator handoff - {context.Function.PluginName}.{context.Function.Name}");
-
                 await next(context);
+                var parametersList = new List<ToolParameter>();
 
-                Console.WriteLine($"Orchestrator handoff completed - {context.Function.PluginName}.{context.Function.Name}");
+                if (context.Arguments != null)
+                {
+                    parametersList = context.Arguments.Select(p => new ToolParameter { Key = p.Key, Value = p.Value?.ToString() }).ToList();
+                }
+                var response = context.Result.GetValue<ChatMessageContent[]>()?.First();
+                ToolCall toolCallInfo = new ToolCall
+                {
+                    FunctionName = context.Function.Name,
+                    PluginName = context.Function.PluginName!,
+                    Parameters = parametersList,
+                    Response = response?.Content
+                };
+
+                toolCallList.Add(toolCallInfo);
             }
         }
     }
