@@ -29,7 +29,7 @@ param cosmosDBDatabaseName string = 'ChatHistory'
 param cosmosDBContainerName string = 'Messages'
 
 @description('Principal ID of the identity that will access Cosmos DB data')
-param cosmosDataPrincipalId string
+param cosmosDataPrincipalId string = deployer().objectId
 
 var location = resourceGroup().location
 
