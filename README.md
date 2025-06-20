@@ -17,5 +17,6 @@ $resourceGroup = New-AzResourceGroup -Name 'your-name' -Location 'your-location'
 New-AzResourceGroupDeployment -Name 'deployment' -ResourceGroup $resourceGroup.ResourceGroupName -TemplateFile infra/main.bicep -TemplateParameters -TemplateParameterObject @{
     publisherEmail = 'admin@example.com'
     publisherName = 'Admin User'
+    cosmosDataPrincipalId = 'Principal ID of your user, so access cosmosDB'
 }
 ```
