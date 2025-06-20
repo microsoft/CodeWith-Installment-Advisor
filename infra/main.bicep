@@ -15,6 +15,8 @@ param publisherName string
 
 var location = resourceGroup().location
 
+var oauth_scopes = 'openid https://graph.microsoft.com/.default'
+
 module apiManagement 'modules/apiManagement.bicep' = {
   name: 'apiManagement'
   params: {
@@ -24,5 +26,18 @@ module apiManagement 'modules/apiManagement.bicep' = {
     publisherName: publisherName
     skuName: apimSkuName
     skuCapacity: apimSkuCapacity
+  }
+}
+
+module apiManagementOAuth 'modules/apim-oauth/apiManagementOAuth.bicep' = {
+  name: 'apiManagementOAuth'
+  params: {
+    apimServiceName: apiManagement.outputs.apimServiceName
+    location: location
+    entraAppUniqueName: 'mcp-oauth-${resourceGroup().name}'
+    entraAppDisplayName: 'MCP OAuth App'
+    oauthScopes: oauth_scopes
+    entraAppUserAssignedIdentityPrincipleId: apiManagement.outputs.managedIdentityPrincipalId
+    entraAppUserAssignedIdentityClientId: apiManagement.outputs.managedIdentityClientId
   }
 }

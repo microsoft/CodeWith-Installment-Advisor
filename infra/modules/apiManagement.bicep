@@ -5,6 +5,11 @@ param publisherName string
 param skuName string = 'Basic'
 param skuCapacity int = 1
 
+resource entraAppUserAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: 'mi-${apimServiceName}'
+  location: location
+}
+
 resource apiManagementService 'Microsoft.ApiManagement/service@2024-06-01-preview' = {
   name: apimServiceName
   location: location
@@ -13,7 +18,11 @@ resource apiManagementService 'Microsoft.ApiManagement/service@2024-06-01-previe
     capacity: skuCapacity
   }
   identity: {
-    type: 'SystemAssigned'
+    type: 'SystemAssigned, UserAssigned'
+    userAssignedIdentities: {
+      // BCP037: Not yet added to latest API:
+      '${entraAppUserAssignedIdentity.id}': {}
+    } 
   }
   properties: {
     publisherEmail: publisherEmail
@@ -38,3 +47,7 @@ resource apiManagementService 'Microsoft.ApiManagement/service@2024-06-01-previe
     releaseChannel: 'GenAI'
   }
 }
+
+output apimServiceName string = apiManagementService.name
+output managedIdentityPrincipalId string = entraAppUserAssignedIdentity.properties.principalId
+output managedIdentityClientId string = entraAppUserAssignedIdentity.properties.clientId
