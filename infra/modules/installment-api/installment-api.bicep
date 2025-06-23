@@ -7,6 +7,9 @@ param location string
 @description('The URL for the Installment API specification')
 param installmentApiSpecUrl string
 
+@description('The API audience for the Entra ID application')
+param apiAudience string
+
 resource apimService 'Microsoft.ApiManagement/service@2024-06-01-preview' existing = {
   name: apimServiceName
 }
@@ -52,33 +55,23 @@ resource importInstallmentApi 'Microsoft.Resources/deploymentScripts@2020-10-01'
   }
 }
 
-// resource installmentApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = {
-//   parent: apimService
-//   name: 'installmentadvisorapi'
-//   properties: {
-//     displayName: 'InstallmentAdvisor.DataApi | v1'
-//     apiRevision: '1'
-//     subscriptionRequired: true
-//     serviceUrl: 'https://webinstallment-h9eqf7fcehdbfwhc.swedencentral-01.azurewebsites.net'
-//     path: 'installmentadvisor'
-//     protocols: [
-//       'https'
-//     ]
-//     authenticationSettings: {
-//       oAuth2AuthenticationSettings: []
-//       openidAuthenticationSettings: []
-//     }
-//     subscriptionKeyParameterNames: {
-//       header: 'Ocp-Apim-Subscription-Key'
-//       query: 'subscription-key'
-//     }
-//     isCurrent: true
-//   }
-// }
+resource EntraIDTenantIdNamedValue 'Microsoft.ApiManagement/service/namedValues@2024-06-01-preview' = {
+  parent: apimService
+  name: 'ApiAudience'
+  properties: {
+    displayName: 'ApiAudience'
+    value: apiAudience
+    secret: false
+  }
+}
+
 
 resource installmentApiMcp 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = {
   parent: apimService
   name: 'installmentadvisorapi-mcp'
+  dependsOn: [
+    importInstallmentApi
+  ]
   properties: {
     displayName: 'InstallmentAdvisor.DataApi | v1 MCP'
     apiRevision: '1'
@@ -105,6 +98,6 @@ resource mcpApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-05-01-
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('installment-api.policy.xml')
+    value: loadTextContent('installment-api-jwt.policy.xml')
   }
 }

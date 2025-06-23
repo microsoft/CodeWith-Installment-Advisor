@@ -1,11 +1,12 @@
 using Azure.AI.Agents.Persistent;
+using Azure.Core;
 using Azure.Identity;
+using Infrastructure;
 using Microsoft.Azure.Cosmos;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using ModelContextProtocol.Client;
 using OrchestratorAPI.Helpers;
-using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,20 @@ PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder
 builder.Services.AddSingleton(aiFoundryClient);
 
 // Inject mcp client.
+var mcpAzureCredential = new DefaultAzureCredential();
+var mcpToken = await mcpAzureCredential.GetTokenAsync(
+    new Azure.Core.TokenRequestContext(
+        new[] { builder.Configuration["mcpServerApiId"]! }
+    )
+);
+var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole(c =>
+    {
+        c.LogToStandardErrorThreshold = LogLevel.Trace;
+    });
+});
+
 var mcpClient = await McpClientFactory.CreateAsync(
     new SseClientTransport(
         new SseClientTransportOptions
@@ -32,10 +47,11 @@ var mcpClient = await McpClientFactory.CreateAsync(
             Endpoint = new Uri(builder.Configuration["mcpServerEndpoint"]!),
             AdditionalHeaders = new Dictionary<string, string>
             {
-                { "Ocp-Apim-Subscription-Key", builder.Configuration["mcpServerApiKey"]! }
+                { "Ocp-Apim-Subscription-Key", builder.Configuration["mcpServerApiKey"]! },
+                { "Authorization", $"Bearer {mcpToken.Token}" }
             }
         }
-    )
+    ), loggerFactory: loggerFactory
 );
 
 var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);

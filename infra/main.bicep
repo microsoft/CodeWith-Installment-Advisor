@@ -16,6 +16,8 @@ param publisherName string
 @description('URL for the Installment API specification')
 param installmentApiSpecUrl string
 
+param apiAudience string
+
 var location = resourceGroup().location
 
 var oauth_scopes = 'openid https://graph.microsoft.com/.default'
@@ -51,5 +53,6 @@ module apiManagementInstallmentAdvisor 'modules/installment-api/installment-api.
     apimServiceName: apiManagement.outputs.apimServiceName
     location: location
     installmentApiSpecUrl: installmentApiSpecUrl
+    apiAudience: apiAudience
   }
 }
