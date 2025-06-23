@@ -25,7 +25,7 @@ PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder
 builder.Services.AddSingleton(aiFoundryClient);
 
 // Inject mcp client.
-List<McpClientTool> tools = [];
+List<McpClientTool> tools = new List<McpClientTool>();
 try
 {
     IMcpClient mcpClient = await McpClientFactory.CreateAsync(
