@@ -1,12 +1,12 @@
 using Azure.AI.Agents.Persistent;
 using Azure.Core;
 using Azure.Identity;
-using Infrastructure;
+using InstallmentAdvisor.ChatApi.Helpers;
+using InstallmentAdvisor.ChatApi.Repositories;
 using Microsoft.Azure.Cosmos;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using ModelContextProtocol.Client;
-using OrchestratorAPI.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,9 +26,12 @@ PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder
 builder.Services.AddSingleton(aiFoundryClient);
 
 // Inject mcp client.
+List<McpClientTool> tools = new List<McpClientTool>();
+try
+{
 var mcpAzureCredential = new DefaultAzureCredential();
 var mcpToken = await mcpAzureCredential.GetTokenAsync(
-    new Azure.Core.TokenRequestContext(
+    new TokenRequestContext(
         new[] { builder.Configuration["mcpServerApiId"]! }
     )
 );
@@ -54,9 +57,18 @@ var mcpClient = await McpClientFactory.CreateAsync(
     ), loggerFactory: loggerFactory
 );
 
-var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+    var toolResponse = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+    tools = [.. toolResponse];
 
-builder.Services.AddSingleton(tools.ToList());
+}
+catch (Exception ex)
+{
+    // Log the error (replace with your logger if available)
+    Console.Error.WriteLine($"Failed to create MCP client: {ex.Message}");
+}
+
+builder.Services.AddSingleton(tools);
+
 
 // Inject cosmos history repository.
 builder.Services.AddSingleton(sp =>

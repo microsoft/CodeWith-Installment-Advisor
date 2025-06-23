@@ -1,11 +1,10 @@
 ﻿using Azure.AI.Agents.Persistent;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 
-namespace OrchestratorAPI.Agents
+namespace InstallmentAdvisor.ChatApi.Agents
 {
     public class FoundryAgentFactory
     {
-
         public static async Task<AzureAIAgent> CreateAgentAsync(PersistentAgentsClient client)
         {
             string instructions = """

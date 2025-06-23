@@ -1,6 +1,6 @@
-﻿using Domain;
+﻿using InstallmentAdvisor.ChatApi.Models;
 
-namespace Infrastructure
+namespace InstallmentAdvisor.ChatApi.Repositories
 {
     public interface IHistoryRepository
     {

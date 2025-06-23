@@ -2,7 +2,7 @@
 using Microsoft.SemanticKernel.Agents;
 using ModelContextProtocol.Client;
 
-namespace OrchestratorAPI.Agents
+namespace InstallmentAdvisor.ChatApi.Agents
 {
     public class ScenarioAgentFactory
     {
@@ -10,7 +10,7 @@ namespace OrchestratorAPI.Agents
         {
             Kernel agentKernel = kernel.Clone();
 
-            if(tools != null)
+            if(tools != null && tools.Count > 0)
             {
                 agentKernel.Plugins.AddFromFunctions("MCP", tools.Select(tool => tool.AsKernelFunction()));
             }
