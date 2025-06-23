@@ -1,8 +1,8 @@
-﻿using Domain;
-using Microsoft.SemanticKernel;
+﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
+using InstallmentAdvisor.ChatApi.Models;
 
-namespace OrchestratorAPI.Agents
+namespace InstallmentAdvisor.ChatApi.Agents
 {
     public class OrchestratorAgentFactory
     {
@@ -43,7 +43,6 @@ namespace OrchestratorAPI.Agents
             };
 
         }
-
         public class AutoFunctionInvocationFilter(List<ToolCall> toolCallList) : IAutoFunctionInvocationFilter
         {
             public async Task OnAutoFunctionInvocationAsync(AutoFunctionInvocationContext context, Func<AutoFunctionInvocationContext, Task> next)

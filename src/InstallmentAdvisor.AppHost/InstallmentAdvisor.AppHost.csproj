@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\backend\OrchestratorAPI\OrchestratorAPI.csproj" />
+    <ProjectReference Include="..\ChatAPI\InstallmentAdvisor.ChatApi.csproj" />
     <ProjectReference Include="..\InstallmentAdvisorApi\InstallmentAdvisor.DataApi.csproj" />
   </ItemGroup>
 

@@ -1,6 +1,6 @@
 ﻿using Azure.Identity;
 
-namespace OrchestratorAPI.Helpers
+namespace InstallmentAdvisor.ChatApi.Helpers
 {
     public class CredentialHelper
     {

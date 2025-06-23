@@ -1,18 +1,18 @@
 using Azure.AI.Agents.Persistent;
-using Domain;
-using Infrastructure;
+using InstallmentAdvisor.ChatApi.Agents;
+using InstallmentAdvisor.ChatApi.Repositories;
+using InstallmentAdvisor.ChatApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using ModelContextProtocol.Client;
-using OrchestratorAPI.Agents;
 using System.Dynamic;
 using System.Text;
 
 
-namespace OrchestratorAPI.Controllers
+namespace InstallmentAdvisor.ChatApi.Controllers
 {
     [ApiController]
     [Route("chat")]
@@ -96,7 +96,6 @@ namespace OrchestratorAPI.Controllers
                     }
                     else
                     {
-                        Console.WriteLine($"CHUNK: {chunkString}");
                         await Response.WriteAsync(chunkString);
                         await Response.Body.FlushAsync();
                     }

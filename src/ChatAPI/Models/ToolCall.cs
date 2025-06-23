@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Domain
+﻿namespace InstallmentAdvisor.ChatApi.Models
 {
     public record ToolCall
     {
