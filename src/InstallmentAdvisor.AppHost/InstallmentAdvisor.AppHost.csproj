@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
 
@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\backend\OrchestratorAPI\OrchestratorAPI.csproj" />
+    <ProjectReference Include="..\ChatApi\InstallmentAdvisor.ChatApi.csproj" />
     <ProjectReference Include="..\InstallmentAdvisorApi\InstallmentAdvisor.DataApi.csproj" />
   </ItemGroup>
 

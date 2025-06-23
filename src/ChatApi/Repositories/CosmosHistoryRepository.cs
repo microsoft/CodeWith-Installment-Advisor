@@ -1,13 +1,13 @@
-﻿using Domain;
-using Microsoft.Azure.Cosmos;
+﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using InstallmentAdvisor.ChatApi.Models;
 
-namespace Infrastructure
+namespace InstallmentAdvisor.ChatApi.Repositories
 {
     public class CosmosHistoryRepository : IHistoryRepository
     {
 
-        private Container _container;
+        private readonly Container _container;
 
         public CosmosHistoryRepository(Container cosmosDbContainer)
         {
@@ -35,7 +35,7 @@ namespace Infrastructure
 
         public async Task<bool> DeleteHistoryAsync(string userId, string threadId)
         {
-            var messages = await this.GetHistoryAsync(userId, threadId);
+            var messages = await GetHistoryAsync(userId, threadId);
             if (messages.Count == 0)
             {
                 return false; // No messages to delete
