@@ -13,6 +13,9 @@ param publisherEmail string
 @description('Name of the API Management publisher')
 param publisherName string
 
+@description('URL for the Installment API specification')
+param installmentApiSpecUrl string
+
 var location = resourceGroup().location
 
 var oauth_scopes = 'openid https://graph.microsoft.com/.default'
@@ -39,5 +42,14 @@ module apiManagementOAuth 'modules/apim-oauth/apiManagementOAuth.bicep' = {
     oauthScopes: oauth_scopes
     entraAppUserAssignedIdentityPrincipleId: apiManagement.outputs.managedIdentityPrincipalId
     entraAppUserAssignedIdentityClientId: apiManagement.outputs.managedIdentityClientId
+  }
+}
+
+module apiManagementInstallmentAdvisor 'modules/installment-api/installment-api.bicep' = {
+  name: 'apiManagementInstallmentAdvisor'
+  params: {
+    apimServiceName: apiManagement.outputs.apimServiceName
+    location: location
+    installmentApiSpecUrl: installmentApiSpecUrl
   }
 }
