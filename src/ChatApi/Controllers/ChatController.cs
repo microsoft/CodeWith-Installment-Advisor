@@ -1,7 +1,8 @@
 using Azure.AI.Agents.Persistent;
 using InstallmentAdvisor.ChatApi.Agents;
-using InstallmentAdvisor.ChatApi.Repositories;
 using InstallmentAdvisor.ChatApi.Models;
+using InstallmentAdvisor.ChatApi.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -14,6 +15,7 @@ using System.Text;
 
 namespace InstallmentAdvisor.ChatApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("chat")]
     public class ChatController : ControllerBase

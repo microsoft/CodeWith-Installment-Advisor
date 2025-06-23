@@ -1,7 +1,9 @@
 using Azure.AI.Agents.Persistent;
 using Azure.Identity;
+using Microsoft.Identity.Web;
 using InstallmentAdvisor.ChatApi.Helpers;
 using InstallmentAdvisor.ChatApi.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents.AzureAI;
@@ -18,24 +20,29 @@ builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
 
-builder.Services.AddKernel().AddAzureOpenAIChatCompletion(builder.Configuration["modelName"]!, endpoint: builder.Configuration["openAiBaseUrl"]!,azureCredential);
+builder.Services.AddKernel().AddAzureOpenAIChatCompletion(
+    Environment.GetEnvironmentVariable("modelName")!, 
+    endpoint: Environment.GetEnvironmentVariable("openAiBaseUrl")!, 
+    azureCredential
+    );
 
 // Inject foundry client for creating agents.
-PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder.Configuration["aiFoundryProjectEndpoint"]!, azureCredential);
+PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(Environment.GetEnvironmentVariable("aiFoundryProjectEndpoint")!, azureCredential);
 builder.Services.AddSingleton(aiFoundryClient);
 
 // Inject mcp client.
 List<McpClientTool> tools = new List<McpClientTool>();
 try
 {
+
     IMcpClient mcpClient = await McpClientFactory.CreateAsync(
         new SseClientTransport(
             new SseClientTransportOptions
             {
-                Endpoint = new Uri(builder.Configuration["mcpServerEndpoint"]!),
+                Endpoint = new Uri(Environment.GetEnvironmentVariable("mcpServerEndpoint")!),
                 AdditionalHeaders = new Dictionary<string, string>
                 {
-                    { "Ocp-Apim-Subscription-Key", builder.Configuration["mcpServerApiKey"]! }
+                    { "Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("mcpServerApiKey")! }                
                 }
             }
         )
@@ -57,9 +64,9 @@ builder.Services.AddSingleton(tools);
 // Inject cosmos history repository.
 builder.Services.AddSingleton(sp =>
 {
-    string accountEndpoint = builder.Configuration["cosmosAccountEndpoint"]!;
-    string databaseName = builder.Configuration["cosmosDatabaseName"]!;
-    string containerName = builder.Configuration["cosmosContainerName"]!;
+    string accountEndpoint = Environment.GetEnvironmentVariable("cosmosAccountEndpoint")!;
+    string databaseName = Environment.GetEnvironmentVariable("cosmosDatabaseName")!;
+    string containerName = Environment.GetEnvironmentVariable("cosmosContainerName")!;
 
     // Create and configure CosmosClientOptions
     var cosmosClientOptions = new CosmosClientOptions
@@ -73,6 +80,13 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(bearerTokenOptions => { }, identityOptions =>
+{
+    identityOptions.ClientId = Environment.GetEnvironmentVariable("chatApiClientId")!;
+    identityOptions.TenantId = Environment.GetEnvironmentVariable("entraIdTenantId")!;
+    identityOptions.Instance = Environment.GetEnvironmentVariable("entraIdInstance")!;
+});
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
@@ -84,6 +98,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 
 app.UseAuthorization();
 
