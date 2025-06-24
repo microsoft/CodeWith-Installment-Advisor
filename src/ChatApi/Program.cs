@@ -21,13 +21,13 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddKernel().AddAzureOpenAIChatCompletion(
-    Environment.GetEnvironmentVariable("modelName")!, 
-    endpoint: Environment.GetEnvironmentVariable("openAiBaseUrl")!, 
+    builder.Configuration["AiFoundry:ModelName"]!, 
+    endpoint: builder.Configuration["AiFoundry:OpenAiBaseUrl"]!, 
     azureCredential
     );
 
 // Inject foundry client for creating agents.
-PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(Environment.GetEnvironmentVariable("aiFoundryProjectEndpoint")!, azureCredential);
+PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"]!, azureCredential);
 builder.Services.AddSingleton(aiFoundryClient);
 
 // Inject mcp client.
@@ -39,10 +39,10 @@ try
         new SseClientTransport(
             new SseClientTransportOptions
             {
-                Endpoint = new Uri(Environment.GetEnvironmentVariable("mcpServerEndpoint")!),
+                Endpoint = new Uri(builder.Configuration["McpServer:McpServerEndpoint"]!),
                 AdditionalHeaders = new Dictionary<string, string>
                 {
-                    { "Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("mcpServerApiKey")! }                
+                    { "Ocp-Apim-Subscription-Key", builder.Configuration["McpServer:McpServerApiKey"]! }                
                 }
             }
         )
@@ -64,9 +64,10 @@ builder.Services.AddSingleton(tools);
 // Inject cosmos history repository.
 builder.Services.AddSingleton(sp =>
 {
-    string accountEndpoint = Environment.GetEnvironmentVariable("cosmosAccountEndpoint")!;
-    string databaseName = Environment.GetEnvironmentVariable("cosmosDatabaseName")!;
-    string containerName = Environment.GetEnvironmentVariable("cosmosContainerName")!;
+
+    string accountEndpoint = builder.Configuration["CosmosDB:CosmosAccountEndpoint"]!;
+    string databaseName = builder.Configuration["CosmosDB:CosmosDatabaseName"]!;
+    string containerName = builder.Configuration["CosmosDB:CosmosContainerName"]!;
 
     // Create and configure CosmosClientOptions
     var cosmosClientOptions = new CosmosClientOptions
@@ -80,12 +81,7 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(bearerTokenOptions => { }, identityOptions =>
-{
-    identityOptions.ClientId = Environment.GetEnvironmentVariable("chatApiClientId")!;
-    identityOptions.TenantId = Environment.GetEnvironmentVariable("entraIdTenantId")!;
-    identityOptions.Instance = Environment.GetEnvironmentVariable("entraIdInstance")!;
-});
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 var app = builder.Build();
 
