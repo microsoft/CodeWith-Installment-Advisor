@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ChatApi\InstallmentAdvisor.ChatApi.csproj" />
+    <ProjectReference Include="..\InstallmentAdvisor.FoundryAgentProvisioner\InstallmentAdvisor.FoundryAgentProvisioner.csproj" />
     <ProjectReference Include="..\InstallmentAdvisorApi\InstallmentAdvisor.DataApi.csproj" />
   </ItemGroup>
 
