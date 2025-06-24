@@ -20,7 +20,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
     [Route("chat")]
     public class ChatController : ControllerBase
     {
-
+        private readonly AgentService _agentService;
         private readonly ILogger<ChatController> _logger;
         private readonly Kernel _kernel;
         private readonly PersistentAgentsClient _aiFoundryClient;
@@ -36,8 +36,9 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             public bool? Debug { get; set; }
         }
 
-        public ChatController(ILogger<ChatController> logger, Kernel kernel, PersistentAgentsClient aiFoundryClient, List<McpClientTool> tools, IHistoryRepository historyRepository)
+        public ChatController(AgentService agentService, ILogger<ChatController> logger, Kernel kernel, PersistentAgentsClient aiFoundryClient, List<McpClientTool> tools, IHistoryRepository historyRepository)
         {
+            _agentService = agentService;
             _logger = logger;
             _kernel = kernel;
             _aiFoundryClient = aiFoundryClient;
@@ -54,18 +55,15 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             List<ToolCall> toolCallInformation = [];
             IActionResult returnValue;
             StringBuilder responseBuilder = new();
-            ChatHistoryAgentThread agentThread = await BuildAgentThreadAsync(chatRequest.UserId, chatRequest.ThreadId);
 
-            // Create sub-agents.
-            ChatCompletionAgent scenarioAgent = ScenarioAgentFactory.CreateAgent(_kernel, _tools);
-            AzureAIAgent jokeAgent = await FoundryAgentFactory.CreateAgentAsync(_aiFoundryClient);
+            AzureAIAgent orchestratorAgent = _agentService.OrchestratorAgent;
 
-            // Create orchestrator agent.
-            ChatCompletionAgent orchestratorAgent = OrchestratorAgentFactory.CreateAgent(_kernel, [scenarioAgent, jokeAgent], chatRequest.Debug == true ? toolCallInformation : null);
+            // Get or create thread.
+            AzureAIAgentThread aiAgentThread = _agentService.GetOrCreateThread(chatRequest.ThreadId);
 
-            if(chatRequest.Stream != true)
+            if (chatRequest.Stream != true)
             {
-                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message, agentThread).FirstAsync();
+                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message, aiAgentThread).FirstAsync();
                 
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;
@@ -78,12 +76,12 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 returnValue = Ok(response);
             }else
             {
-                SetupEventStreamHeaders(agentThread.Id!);
+                SetupEventStreamHeaders(aiAgentThread.Id!);
                 bool responseStarted = false;
                 await Response.WriteAsync("[STARTED]");
                 await Response.Body.FlushAsync();
 
-                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatRequest.Message, agentThread))
+                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatRequest.Message, aiAgentThread))
                 {
                     string chunkString = chunk.ToString();
                     if(responseStarted == false)
@@ -106,12 +104,10 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 await Response.Body.FlushAsync();
                 returnValue = new EmptyResult();
             }
-            // Delete foundry agent.
-            await FoundryAgentFactory.DeleteAgentAsync(_aiFoundryClient, jokeAgent.Id);
 
             // Save chat history to repository.
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, agentThread.Id!, chatRequest.Message, "user");
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, agentThread.Id!, responseBuilder.ToString(), "assistant");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, chatRequest.Message, "user");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, responseBuilder.ToString(), "assistant");
 
             return returnValue;
             

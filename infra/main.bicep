@@ -13,6 +13,12 @@ param publisherEmail string
 @description('Name of the API Management publisher')
 param publisherName string
 
+@description('URL for the Installment API specification')
+param installmentApiSpecUrl string
+
+@description('Audience for the API Management Entra ID application')
+param apiAudience string
+
 @description('Name of the AI Foundry service')
 param aiFoundryName string = 'foundry-${uniqueString(resourceGroup().id)}'
 
@@ -33,6 +39,8 @@ param cosmosDataPrincipalId string = deployer().objectId
 
 var location = resourceGroup().location
 
+var oauth_scopes = 'openid https://graph.microsoft.com/.default'
+
 module apiManagement 'modules/apiManagement.bicep' = {
   name: 'apiManagement'
   params: {
@@ -45,6 +53,28 @@ module apiManagement 'modules/apiManagement.bicep' = {
   }
 }
 
+module apiManagementOAuth 'modules/apim-oauth/apiManagementOAuth.bicep' = {
+  name: 'apiManagementOAuth'
+  params: {
+    apimServiceName: apiManagement.outputs.apimServiceName
+    location: location
+    entraAppUniqueName: 'mcp-oauth-${resourceGroup().name}'
+    entraAppDisplayName: 'MCP OAuth App'
+    oauthScopes: oauth_scopes
+    entraAppUserAssignedIdentityPrincipleId: apiManagement.outputs.managedIdentityPrincipalId
+    entraAppUserAssignedIdentityClientId: apiManagement.outputs.managedIdentityClientId
+  }
+}
+
+module apiManagementInstallmentAdvisor 'modules/installment-api/installment-api.bicep' = {
+  name: 'apiManagementInstallmentAdvisor'
+  params: {
+    apimServiceName: apiManagement.outputs.apimServiceName
+    location: location
+    installmentApiSpecUrl: installmentApiSpecUrl
+    apiAudience: apiAudience
+  }
+}
 module aiFoundry 'modules/aiFoundry.bicep' = {
   name: 'aiFoundry'
   params: {

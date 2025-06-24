@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner");
 builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
 builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
@@ -16,6 +17,7 @@ builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment("AzureAd:ClientId", builder.Configuration["AzureAd:ClientId"])
     .WithEnvironment("AzureAd:TenantId", builder.Configuration["AzureAd:TenantId"])
     .WithEnvironment("AzureAd:Instance", builder.Configuration["AzureAd:Instance"]);
+    .WaitForCompletion(agentProvisioner);
 
 builder.Build().Run();
 

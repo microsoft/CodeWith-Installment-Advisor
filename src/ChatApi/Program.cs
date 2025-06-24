@@ -1,6 +1,8 @@
 using Azure.AI.Agents.Persistent;
+using Azure.Core;
 using Azure.Identity;
 using Microsoft.Identity.Web;
+using InstallmentAdvisor.ChatApi.Agents;
 using InstallmentAdvisor.ChatApi.Helpers;
 using InstallmentAdvisor.ChatApi.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,19 +36,34 @@ builder.Services.AddSingleton(aiFoundryClient);
 List<McpClientTool> tools = new List<McpClientTool>();
 try
 {
+var mcpAzureCredential = new DefaultAzureCredential();
+var mcpToken = await mcpAzureCredential.GetTokenAsync(
+    new TokenRequestContext(
+        new[] { builder.Configuration["mcpServerApiId"]! }
+    )
+);
+var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole(c =>
+    {
+        c.LogToStandardErrorThreshold = LogLevel.Trace;
+    });
+});
 
-    IMcpClient mcpClient = await McpClientFactory.CreateAsync(
-        new SseClientTransport(
-            new SseClientTransportOptions
+var mcpClient = await McpClientFactory.CreateAsync(
+    new SseClientTransport(
+        new SseClientTransportOptions
+        {
+            Endpoint = new Uri(builder.Configuration["McpServer:McpServerEndpoint"]!),
+            AdditionalHeaders = new Dictionary<string, string>
             {
-                Endpoint = new Uri(builder.Configuration["McpServer:McpServerEndpoint"]!),
-                AdditionalHeaders = new Dictionary<string, string>
-                {
-                    { "Ocp-Apim-Subscription-Key", builder.Configuration["McpServer:McpServerApiKey"]! }                
-                }
+                { "Ocp-Apim-Subscription-Key", builder.Configuration["McpServer:McpServerApiKey"]! },
+                { "Authorization", $"Bearer {mcpToken.Token}" }
+
             }
-        )
-    );
+        }
+    ), loggerFactory: loggerFactory
+);
 
     var toolResponse = await mcpClient.ListToolsAsync().ConfigureAwait(false);
     tools = [.. toolResponse];
@@ -81,7 +98,12 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+
+var agentIds = builder.Configuration["agentIds"]?.Split(';') ?? Array.Empty<string>();
+var agentService = new AgentService(aiFoundryClient, agentIds, tools);
+builder.Services.AddSingleton(agentService);
 
 var app = builder.Build();
 
