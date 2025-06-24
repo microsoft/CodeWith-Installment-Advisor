@@ -32,9 +32,11 @@ For running locally, add the following user secrets to the AppHost:
 ```json
 {
   ...
-  "chatApiClientId" : "<Application Id>",
-  "entraIdTenantId" : "<Tenant Id>",
-  "entraIdInstance" : "https://login.microsoftonline.com/"
+  "AzureAd": {
+  "ClientId": "",
+  "TenantId": "",
+  "Instance": "https://login.microsoftonline.com/"
+}
 }
 ```
 
