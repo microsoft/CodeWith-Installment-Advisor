@@ -1,4 +1,5 @@
 using Azure.AI.Agents.Persistent;
+using Azure.Core;
 using Azure.Identity;
 using InstallmentAdvisor.ChatApi.Agents;
 using InstallmentAdvisor.ChatApi.Helpers;
@@ -29,18 +30,33 @@ builder.Services.AddSingleton(aiFoundryClient);
 List<McpClientTool> tools = new List<McpClientTool>();
 try
 {
-    IMcpClient mcpClient = await McpClientFactory.CreateAsync(
-        new SseClientTransport(
-            new SseClientTransportOptions
+var mcpAzureCredential = new DefaultAzureCredential();
+var mcpToken = await mcpAzureCredential.GetTokenAsync(
+    new TokenRequestContext(
+        new[] { builder.Configuration["mcpServerApiId"]! }
+    )
+);
+var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole(c =>
+    {
+        c.LogToStandardErrorThreshold = LogLevel.Trace;
+    });
+});
+
+var mcpClient = await McpClientFactory.CreateAsync(
+    new SseClientTransport(
+        new SseClientTransportOptions
+        {
+            Endpoint = new Uri(builder.Configuration["mcpServerEndpoint"]!),
+            AdditionalHeaders = new Dictionary<string, string>
             {
-                Endpoint = new Uri(builder.Configuration["mcpServerEndpoint"]!),
-                AdditionalHeaders = new Dictionary<string, string>
-                {
-                    { "Ocp-Apim-Subscription-Key", builder.Configuration["mcpServerApiKey"]! }
-                }
+                { "Ocp-Apim-Subscription-Key", builder.Configuration["mcpServerApiKey"]! },
+                { "Authorization", $"Bearer {mcpToken.Token}" }
             }
-        )
-    );
+        }
+    ), loggerFactory: loggerFactory
+);
 
     var toolResponse = await mcpClient.ListToolsAsync().ConfigureAwait(false);
     tools = [.. toolResponse];
