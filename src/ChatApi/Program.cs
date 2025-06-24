@@ -1,5 +1,6 @@
 using Azure.AI.Agents.Persistent;
 using Azure.Identity;
+using InstallmentAdvisor.ChatApi.Agents;
 using InstallmentAdvisor.ChatApi.Helpers;
 using InstallmentAdvisor.ChatApi.Repositories;
 using Microsoft.Azure.Cosmos;
@@ -72,6 +73,10 @@ builder.Services.AddSingleton(sp =>
     return database.GetContainer(containerName);
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
+
+var agentIds = builder.Configuration["agentIds"]?.Split(';') ?? Array.Empty<string>();
+var agentService = new AgentService(aiFoundryClient, agentIds, tools);
+builder.Services.AddSingleton(agentService);
 
 var app = builder.Build();
 
