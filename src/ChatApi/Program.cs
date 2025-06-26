@@ -18,6 +18,17 @@ builder.AddServiceDefaults();
 DefaultAzureCredentialOptions azureCredentialOptions = CredentialHelper.GetDefaultAzureCredentialOptions(builder.Environment.EnvironmentName);
 var azureCredential = new DefaultAzureCredential(azureCredentialOptions);
 
+// Add CORS services for Frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(builder.Configuration["Frontend:Url"]!)
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
@@ -77,7 +88,6 @@ catch (Exception ex)
 
 builder.Services.AddSingleton(tools);
 
-
 // Inject cosmos history repository.
 builder.Services.AddSingleton(sp =>
 {
@@ -98,8 +108,7 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 var agentIds = builder.Configuration["agentIds"]?.Split(';') ?? Array.Empty<string>();
 var agentService = new AgentService(aiFoundryClient, agentIds, tools);
@@ -109,6 +118,9 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
+// Use CORS before any endpoint mapping
+app.UseCors("AllowFrontend");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -117,8 +129,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
-app.UseAuthorization();
+//app.UseAuthorization();
 
 app.MapControllers();
 

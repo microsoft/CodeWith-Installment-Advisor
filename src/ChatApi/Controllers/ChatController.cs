@@ -15,7 +15,7 @@ using System.Text;
 
 namespace InstallmentAdvisor.ChatApi.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("chat")]
     public class ChatController : ControllerBase
@@ -63,7 +63,16 @@ namespace InstallmentAdvisor.ChatApi.Controllers
 
             if (chatRequest.Stream != true)
             {
-                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message, aiAgentThread).FirstAsync();
+                var chatMessages = new List<ChatMessageContent>();
+
+                if (string.IsNullOrEmpty(chatRequest.ThreadId))
+                {
+                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
+                }
+
+                chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
+
+                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, aiAgentThread).FirstAsync();
                 
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;
@@ -73,6 +82,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 {
                     response.toolCalls = toolCallInformation;
                 }
+
                 returnValue = Ok(response);
             }else
             {

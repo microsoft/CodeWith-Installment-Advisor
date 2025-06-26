@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Identity;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner");
-builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
-builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
+var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
+    .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
+    .WithEnvironment("AiFoundry:OpenAiBaseUrl", builder.Configuration["AiFoundry:OpenAiBaseUrl"])
+    .WithEnvironment("AiFoundry:AiFoundryProjectEndpoint", builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"]);
+var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
+var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
     .WithEnvironment("AiFoundry:OpenAiBaseUrl", builder.Configuration["AiFoundry:OpenAiBaseUrl"])
     .WithEnvironment("AiFoundry:AiFoundryProjectEndpoint", builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"])
@@ -17,7 +20,15 @@ builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment("AzureAd:ClientId", builder.Configuration["AzureAd:ClientId"])
     .WithEnvironment("AzureAd:TenantId", builder.Configuration["AzureAd:TenantId"])
     .WithEnvironment("AzureAd:Instance", builder.Configuration["AzureAd:Instance"])
+    .WithEnvironment("Frontend:Url", builder.Configuration["Frontend:Url"])
     .WaitForCompletion(agentProvisioner);
+var frontendApp = builder.AddNpmApp("frontend", "../frontend")
+    .WithReference(chatApi)
+    .WaitFor(chatApi)
+    .WithHttpsEndpoint()
+    .WithEnvironment("HTTPS", "true")
+    .WithEnvironment("REACT_APP_CHAT_API", chatApi.GetEndpoint("https"))
+    .WithExternalHttpEndpoints();
 
 builder.Build().Run();
 
