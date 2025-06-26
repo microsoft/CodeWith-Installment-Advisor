@@ -21,6 +21,7 @@ var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api"
     .WithEnvironment("AzureAd:TenantId", builder.Configuration["AzureAd:TenantId"])
     .WithEnvironment("AzureAd:Instance", builder.Configuration["AzureAd:Instance"])
     .WithEnvironment("Frontend:Url", builder.Configuration["Frontend:Url"])
+    .WithEnvironment("agentIds", builder.Configuration["agentIds"])
     .WaitForCompletion(agentProvisioner);
 var frontendApp = builder.AddNpmApp("frontend", "../frontend")
     .WithReference(chatApi)

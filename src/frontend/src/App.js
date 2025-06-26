@@ -18,7 +18,13 @@ function App() {
 
   useEffect(() => {
     if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      const messagesContainer = chatEndRef.current.parentElement;
+      const isScrolledToBottom = messagesContainer.scrollHeight - messagesContainer.clientHeight <= messagesContainer.scrollTop + 1;
+      
+      // Only auto-scroll if user is already at or near the bottom
+      if (isScrolledToBottom || messages.length <= 2) {
+        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   }, [messages]);
 
@@ -30,12 +36,19 @@ function App() {
     e.preventDefault();
     if (!input.trim()) return;
     const userMessage = { sender: 'user', text: input };
+    const currentInput = input;
     setMessages((msgs) => [...msgs, userMessage]);
+    setInput(''); // Clear input immediately
     setLoading(true);
+    
+    // Add typing indicator
+    const typingMessage = { sender: 'bot', text: '', isTyping: true };
+    setMessages((msgs) => [...msgs, typingMessage]);
+    
     try {
       const body = {
         UserID: userId,
-        message: input,
+        message: currentInput,
         ...(threadId ? { threadId } : {})
       };
       const res = await fetch(API_ENDPOINT, {
@@ -45,18 +58,24 @@ function App() {
       });
       const data = await res.json();
       if (data.threadId) setThreadId(data.threadId);
+      
+      // Remove typing indicator and add actual response
       setMessages((msgs) => [
-        ...msgs,
-        { sender: 'bot', text: data.reply || data.message || 'Geen antwoord ontvangen.' }
+        ...msgs.slice(0, -1), // Remove typing indicator
+        { 
+          sender: 'bot', 
+          text: data.reply || data.message || 'Geen antwoord ontvangen.',
+          images: data.images || []
+        }
       ]);
     } catch (err) {
+      // Remove typing indicator and add error message
       setMessages((msgs) => [
-        ...msgs,
-        { sender: 'bot', text: 'Er is een fout opgetreden. Probeer het later opnieuw.' }
+        ...msgs.slice(0, -1), // Remove typing indicator
+        { sender: 'bot', text: 'Er is een fout opgetreden. Probeer het later opnieuw.', images: [] }
       ]);
     } finally {
       setLoading(false);
-      setInput('');
     }
   };
 
@@ -104,7 +123,38 @@ function App() {
           {messages.map((msg, idx) => (
             <div key={idx} className={`chat-message ${msg.sender}`}>
               {msg.sender === 'bot' ? (
-                <ReactMarkdown>{msg.text}</ReactMarkdown>
+                <div>
+                  {msg.isTyping ? (
+                    <div className="typing-indicator">
+                      <div className="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                      <span className="typing-text"></span>
+                    </div>
+                  ) : (
+                    <>
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                      {msg.images && msg.images.length > 0 && (
+                        <div className="message-images">
+                          {msg.images.map((image, imageIdx) => (
+                            <img
+                              key={imageIdx}
+                              src={`data:image/png;base64,${image}`}
+                              alt={`Response image ${imageIdx + 1}`}
+                              className="response-image"
+                              onError={(e) => {
+                                console.error('Failed to load image:', e);
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               ) : (
                 msg.text
               )}

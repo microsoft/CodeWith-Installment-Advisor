@@ -2,7 +2,6 @@ using Azure.AI.Agents.Persistent;
 using InstallmentAdvisor.ChatApi.Agents;
 using InstallmentAdvisor.ChatApi.Models;
 using InstallmentAdvisor.ChatApi.Repositories;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -55,8 +54,9 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             List<ToolCall> toolCallInformation = [];
             IActionResult returnValue;
             StringBuilder responseBuilder = new();
-
-            AzureAIAgent orchestratorAgent = _agentService.OrchestratorAgent;
+            
+            List<string> images = [];
+            AzureAIAgent orchestratorAgent = _agentService.CreateOrchestratorAgentWithImageFilter(images);
 
             // Get or create thread.
             AzureAIAgentThread aiAgentThread = _agentService.GetOrCreateThread(chatRequest.ThreadId);
@@ -73,7 +73,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
 
                 AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, aiAgentThread).FirstAsync();
-                
+
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;
                 response.threadId = chatResponse.Thread.Id;
@@ -82,7 +82,10 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 {
                     response.toolCalls = toolCallInformation;
                 }
-
+                if (images != null && images.Count > 0)
+                {
+                    response.images = images;
+                }
                 returnValue = Ok(response);
             }else
             {
