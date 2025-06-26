@@ -152,10 +152,10 @@ body.dark-mode .user-id-input {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
+  height: calc(100vh - 64px); /* Account for topbar height */
 }
 .chat-messages {
   flex: 1;
@@ -165,7 +165,41 @@ body.dark-mode .user-id-input {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0; /* Allow flex item to shrink */
 }
+
+/* Custom scrollbar styling */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Dark mode scrollbar */
+body.dark-mode .chat-messages::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+body.dark-mode .chat-messages::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+body.dark-mode .chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
 .chat-message {
   padding: 10px 16px;
   border-radius: 18px;
@@ -190,6 +224,7 @@ body.dark-mode .user-id-input {
   border-top: 1px solid #eee;
   background: #fafbfc;
   border-radius: 0 0 12px 12px;
+  flex-shrink: 0; /* Prevent input from shrinking */
 }
 .chat-input-row input[type="text"] {
   flex: 1;
@@ -213,7 +248,89 @@ body.dark-mode .user-id-input {
 .chat-input-row button:disabled {
   background: #b3d3f2;
   cursor: not-allowed;
-}.App {
+}
+/* Message images styles */
+.message-images {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.response-image {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.response-image:hover {
+  transform: scale(1.02);
+}
+
+/* Dark mode image styles */
+body.dark-mode .response-image {
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Typing indicator styles */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  color: #666;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #0078d4;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.typing-text {
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Dark mode typing indicator */
+body.dark-mode .typing-indicator {
+  color: #ccc;
+}
+
+body.dark-mode .typing-dots span {
+  background-color: #4a9eff;
+}
+
+.App {
   text-align: center;
 }
 

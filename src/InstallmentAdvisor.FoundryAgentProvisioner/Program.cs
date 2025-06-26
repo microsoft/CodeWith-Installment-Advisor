@@ -34,7 +34,7 @@ var existingAgentsDict = existingAgents
 // Iterate through AgentConstants
 var requiredAgentNames = new List<string>
 {
-    AgentConstants.JOKE_AGENT_NAME,
+    AgentConstants.VISUALIZATION_AGENT_NAME,
     AgentConstants.INSTALLMENT_RULE_EVALUATION_AGENT_NAME,
     AgentConstants.SCENARIO_AGENT_NAME,
     AgentConstants.ORCHESTRATOR_AGENT_NAME

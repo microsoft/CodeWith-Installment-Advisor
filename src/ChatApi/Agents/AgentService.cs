@@ -31,7 +31,7 @@ public class AgentService
     }
 
     public AzureAIAgent ScenarioAgent { get; private set; } = null!;
-    public AzureAIAgent JokeAgent { get; private set; } = null!;
+    public AzureAIAgent VisualizationAgent { get; private set; } = null!;
     public AzureAIAgent InstallmentRuleEvaluationAgent { get; private set; } = null!;
     public AzureAIAgent OrchestratorAgent { get; private set; } = null!;
 
@@ -48,12 +48,20 @@ public class AgentService
         }
     }
 
+    public AzureAIAgent CreateOrchestratorAgentWithImageFilter(List<string> images)
+    {
+        AzureAIAgent agent = new(_persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], _aiFoundryClient);
+        RegisterSubAgents(agent, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
+        agent.Kernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
+        return agent;
+    }
+
     private void Initialize(List<McpClientTool>? _tools)
     {
         ScenarioAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.SCENARIO_AGENT_NAME], _tools);
-        JokeAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.JOKE_AGENT_NAME], _tools);
+        VisualizationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.VISUALIZATION_AGENT_NAME], _tools);
         InstallmentRuleEvaluationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.INSTALLMENT_RULE_EVALUATION_AGENT_NAME], _tools);
-        OrchestratorAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], new List<Agent> { ScenarioAgent, JokeAgent, InstallmentRuleEvaluationAgent }, null);
+        OrchestratorAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent }, null);
     }
 
     private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools)
@@ -69,7 +77,6 @@ public class AgentService
         AzureAIAgent agent = new(agentDefinition, client);
 
         RegisterSubAgents(agent, subAgents);
-
         if (toolCallList != null)
         {
             agent.Kernel.AutoFunctionInvocationFilters.Add(new AutoFunctionInvocationFilter(toolCallList));
