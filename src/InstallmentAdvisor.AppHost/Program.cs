@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Identity;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner");
+var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
+    .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
+    .WithEnvironment("AiFoundry:OpenAiBaseUrl", builder.Configuration["AiFoundry:OpenAiBaseUrl"])
+    .WithEnvironment("AiFoundry:AiFoundryProjectEndpoint", builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"]);
 builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
 builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
