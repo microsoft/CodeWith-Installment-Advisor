@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './App.css';
 
 const API_ENDPOINT = (process.env.REACT_APP_CHAT_API || 'https://localhost:55018').replace(/\/+$/, '') + '/chat';
@@ -101,7 +102,13 @@ function App() {
       <div className="chat-main">
         <div className="chat-messages">
           {messages.map((msg, idx) => (
-            <div key={idx} className={`chat-message ${msg.sender}`}>{msg.text}</div>
+            <div key={idx} className={`chat-message ${msg.sender}`}>
+              {msg.sender === 'bot' ? (
+                <ReactMarkdown>{msg.text}</ReactMarkdown>
+              ) : (
+                msg.text
+              )}
+            </div>
           ))}
           <div ref={chatEndRef} />
         </div>
