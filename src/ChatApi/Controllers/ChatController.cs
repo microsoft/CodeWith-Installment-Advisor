@@ -15,7 +15,7 @@ using System.Text;
 
 namespace InstallmentAdvisor.ChatApi.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("chat")]
     public class ChatController : ControllerBase
@@ -63,7 +63,13 @@ namespace InstallmentAdvisor.ChatApi.Controllers
 
             if (chatRequest.Stream != true)
             {
-                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatRequest.Message, aiAgentThread).FirstAsync();
+                var chatMessages = new List<ChatMessageContent>
+                {
+                    new ChatMessageContent(AuthorRole.System, "Today is " + DateTime.UtcNow.ToString("yyyy-MM-dd") + "."),
+                    new ChatMessageContent(AuthorRole.User, chatRequest.Message)
+                };
+
+                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, aiAgentThread).FirstAsync();
                 
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;

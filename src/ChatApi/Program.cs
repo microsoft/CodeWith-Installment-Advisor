@@ -108,7 +108,7 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 var agentIds = builder.Configuration["agentIds"]?.Split(';') ?? Array.Empty<string>();
 var agentService = new AgentService(aiFoundryClient, agentIds, tools);
@@ -129,7 +129,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+//app.UseAuthorization();
 
 app.MapControllers();
 
