@@ -63,11 +63,14 @@ namespace InstallmentAdvisor.ChatApi.Controllers
 
             if (chatRequest.Stream != true)
             {
-                var chatMessages = new List<ChatMessageContent>
+                var chatMessages = new List<ChatMessageContent>();
+
+                if (string.IsNullOrEmpty(chatRequest.ThreadId))
                 {
-                    new ChatMessageContent(AuthorRole.System, "Today is " + DateTime.UtcNow.ToString("yyyy-MM-dd") + "."),
-                    new ChatMessageContent(AuthorRole.User, chatRequest.Message)
-                };
+                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
+                }
+
+                chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
 
                 AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, aiAgentThread).FirstAsync();
                 
@@ -79,6 +82,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 {
                     response.toolCalls = toolCallInformation;
                 }
+
                 returnValue = Ok(response);
             }else
             {
