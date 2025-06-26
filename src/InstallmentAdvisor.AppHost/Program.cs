@@ -20,6 +20,7 @@ builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment("AzureAd:ClientId", builder.Configuration["AzureAd:ClientId"])
     .WithEnvironment("AzureAd:TenantId", builder.Configuration["AzureAd:TenantId"])
     .WithEnvironment("AzureAd:Instance", builder.Configuration["AzureAd:Instance"])
+    .WithEnvironment("Frontend:Url", builder.Configuration["Frontend:Url"])
     .WaitForCompletion(agentProvisioner);
 
 builder.Build().Run();

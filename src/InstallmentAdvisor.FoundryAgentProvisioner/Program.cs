@@ -20,10 +20,10 @@ string environmentName = configuration["EnvironmentName"] ?? "Production";
 DefaultAzureCredentialOptions azureCredentialOptions = CredentialHelper.GetDefaultAzureCredentialOptions(environmentName);
 var azureCredential = new DefaultAzureCredential(azureCredentialOptions);
 
-string aiFoundryProjectEndpoint = configuration["aiFoundryProjectEndpoint"]!;
+string aiFoundryProjectEndpoint = configuration["AiFoundry:AiFoundryProjectEndpoint"]!;
 PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(aiFoundryProjectEndpoint, azureCredential);
 
-string modelName = configuration["modelName"]!;
+string modelName = configuration["AiFoundry:ModelName"]!;
 
 // Fetch current agents from Foundry
 var existingAgents = aiFoundryClient.Administration.GetAgents();
