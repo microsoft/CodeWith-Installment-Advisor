@@ -1,3 +1,66 @@
+/* Icon button for new chat */
+.icon-btn {
+  background: rgba(255,255,255,0.12);
+  color: #0078d4;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  padding: 0;
+  margin-left: 4px;
+}
+.icon-btn svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+.icon-btn:hover, .icon-btn:focus {
+  background: rgba(0,120,212,0.13);
+  color: #005fa3;
+}
+.dark-mode .icon-btn {
+  background: rgba(255,255,255,0.08);
+  color: #4a90e2;
+}
+.dark-mode .icon-btn:hover, .dark-mode .icon-btn:focus {
+  background: #23272f;
+  color: #b3d3f2;
+}
+.new-chat-icon-btn {
+  margin-right: 8px;
+}
+/* New chat button styling */
+.new-chat-btn {
+  background: rgba(0,120,212,0.09);
+  color: #0078d4;
+  border: 1px solid #b3d3f2;
+  border-radius: 18px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+  margin-left: 4px;
+}
+.new-chat-btn:hover, .new-chat-btn:focus {
+  background: #e6f7ff;
+  border-color: #0078d4;
+}
+.dark-mode .new-chat-btn {
+  background: #23272f;
+  color: #4a90e2;
+  border-color: #333a44;
+}
+.dark-mode .new-chat-btn:hover, .dark-mode .new-chat-btn:focus {
+  background: #2d3640;
+  border-color: #4a90e2;
+}
 /* Scenario cards styling */
 .scenario-cards-row {
   display: flex;

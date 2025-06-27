@@ -102,6 +102,15 @@ function App() {
     sendMessage({ preventDefault: () => {} }, scenarioText);
   };
 
+  // Handler to start a new chat thread
+  const handleNewChat = () => {
+    setMessages([
+      { sender: 'bot', text: 'Welkom bij de Installment Advisor! Stel hier je vraag over je termijnbedrag.' }
+    ]);
+    setThreadId(null);
+    setInput('');
+  };
+
   return (
     <div className="chat-fullscreen">
       <div className="chat-topbar">
@@ -114,6 +123,20 @@ function App() {
             title={darkMode ? 'Licht modus' : 'Donkere modus'}
           >
             {darkMode ? '🌙' : '☀️'}
+          </button>
+          <button
+            className="icon-btn new-chat-icon-btn"
+            onClick={handleNewChat}
+            type="button"
+            title="Nieuw gesprek starten"
+            aria-label="Nieuw gesprek starten"
+            style={{ marginRight: 8 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              <path d="M7.5 11a3.5 3.5 0 1 1 3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <path d="M11 7.5V3.8M11 18.2v-3.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </button>
           <div className="user-menu-wrapper">
             <button
