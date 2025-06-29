@@ -10,6 +10,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using ModelContextProtocol.Client;
+using InstallmentAdvisor.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,48 +34,50 @@ builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
 
+
+var aiFoundrySettings = AiFoundrySettings.FromBase64String(builder.Configuration[AiFoundrySettings.Key]!);
 builder.Services.AddKernel().AddAzureOpenAIChatCompletion(
-    builder.Configuration["AiFoundry:ModelName"]!, 
-    endpoint: builder.Configuration["AiFoundry:OpenAiBaseUrl"]!, 
+    aiFoundrySettings.ModelName, 
+    endpoint: aiFoundrySettings.AiFoundryProjectEndpoint, 
     azureCredential
     );
 
 // Inject foundry client for creating agents.
-PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"]!, azureCredential);
+PersistentAgentsClient aiFoundryClient = AzureAIAgent.CreateAgentsClient(aiFoundrySettings.AiFoundryProjectEndpoint, azureCredential);
 builder.Services.AddSingleton(aiFoundryClient);
 
 // Inject mcp client.
 List<McpClientTool> tools = new List<McpClientTool>();
 try
 {
-var mcpAzureCredential = new DefaultAzureCredential();
-var mcpToken = await mcpAzureCredential.GetTokenAsync(
-    new TokenRequestContext(
-        new[] { builder.Configuration["mcpServerApiId"]! }
-    )
-);
-var loggerFactory = LoggerFactory.Create(builder =>
-{
-    builder.AddConsole(c =>
+    var mcpServerSettings = McpServerSettings.FromBase64String(builder.Configuration[McpServerSettings.Key]!);
+    //var mcpToken = await azureCredential.GetTokenAsync(
+    //    new TokenRequestContext(
+    //        new[] { mcpServerSettings.ApiId }
+    //    )
+    //);
+    var loggerFactory = LoggerFactory.Create(builder =>
     {
-        c.LogToStandardErrorThreshold = LogLevel.Trace;
-    });
-});
-
-var mcpClient = await McpClientFactory.CreateAsync(
-    new SseClientTransport(
-        new SseClientTransportOptions
+        builder.AddConsole(c =>
         {
-            Endpoint = new Uri(builder.Configuration["McpServer:McpServerEndpoint"]!),
-            AdditionalHeaders = new Dictionary<string, string>
-            {
-                { "Ocp-Apim-Subscription-Key", builder.Configuration["McpServer:McpServerApiKey"]! },
-                { "Authorization", $"Bearer {mcpToken.Token}" }
+            c.LogToStandardErrorThreshold = LogLevel.Trace;
+        });
+    });
 
+    var mcpClient = await McpClientFactory.CreateAsync(
+        new SseClientTransport(
+            new SseClientTransportOptions
+            {
+                Endpoint = new Uri(mcpServerSettings.McpServerEndpoint),
+                AdditionalHeaders = new Dictionary<string, string>
+                {
+                    { "Ocp-Apim-Subscription-Key", mcpServerSettings.McpServerApiKey },
+                    //{ "Authorization", $"Bearer {mcpToken.Token}" }
+
+                }
             }
-        }
-    ), loggerFactory: loggerFactory
-);
+        ), loggerFactory: loggerFactory
+    );
 
     var toolResponse = await mcpClient.ListToolsAsync().ConfigureAwait(false);
     tools = [.. toolResponse];
@@ -91,10 +94,7 @@ builder.Services.AddSingleton(tools);
 // Inject cosmos history repository.
 builder.Services.AddSingleton(sp =>
 {
-
-    string accountEndpoint = builder.Configuration["CosmosDB:CosmosAccountEndpoint"]!;
-    string databaseName = builder.Configuration["CosmosDB:CosmosDatabaseName"]!;
-    string containerName = builder.Configuration["CosmosDB:CosmosContainerName"]!;
+    var cosmosSettings = CosmosDbSettings.FromBase64String(builder.Configuration[CosmosDbSettings.Key]);
 
     // Create and configure CosmosClientOptions
     var cosmosClientOptions = new CosmosClientOptions
@@ -102,16 +102,16 @@ builder.Services.AddSingleton(sp =>
         ConnectionMode = ConnectionMode.Direct,
         RequestTimeout = TimeSpan.FromSeconds(30)
     };
-    var client = new CosmosClient(accountEndpoint, azureCredential, cosmosClientOptions);
-    var database = client.GetDatabase(databaseName);
-    return database.GetContainer(containerName);
+    var client = new CosmosClient(cosmosSettings.CosmosAccountEndpoint, azureCredential, cosmosClientOptions);
+    var database = client.GetDatabase(cosmosSettings.CosmosDatabaseName);
+    return database.GetContainer(cosmosSettings.CosmosContainerName);
 });
 builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 var agentIds = builder.Configuration["agentIds"]?.Split(';') ?? Array.Empty<string>();
-var agentService = new AgentService(aiFoundryClient, agentIds, tools);
+var agentService = new AgentService(aiFoundryClient, agentIds, tools, builder.Configuration);
 builder.Services.AddSingleton(agentService);
 
 var app = builder.Build();

@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aab12a72-b22e-4399-9155-e9d6dd00302b</UserSecretsId>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -32,6 +33,7 @@
 
   <ItemGroup>
 	 <ProjectReference Include="..\InstallmentAdvisor.ServiceDefaults\InstallmentAdvisor.ServiceDefaults.csproj" />
+	 <ProjectReference Include="..\InstallmentAdvisor.Settings\InstallmentAdvisor.Settings.csproj" />
   </ItemGroup>
 
 </Project>

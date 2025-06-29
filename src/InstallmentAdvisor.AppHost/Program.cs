@@ -1,28 +1,38 @@
-using Aspire.Hosting;
-using Microsoft.AspNetCore.Identity;
+using InstallmentAdvisor.Settings;
+using Microsoft.Extensions.Configuration;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+var agentSettings = new AgentsSettings();
+builder.Configuration.GetSection(AgentsSettings.Key).Bind(agentSettings);
+
+var aiFoundrySettings = new AiFoundrySettings();
+builder.Configuration.GetSection(AiFoundrySettings.Key).Bind(aiFoundrySettings);
+
+var mcpServerSettings = new McpServerSettings();
+builder.Configuration.GetSection(McpServerSettings.Key).Bind(mcpServerSettings);
+
+var cosmosDbSettings = new CosmosDbSettings();
+builder.Configuration.GetSection(CosmosDbSettings.Key).Bind(cosmosDbSettings);
+
+var entraIdSettings = new EntraIdSettings();
+builder.Configuration.GetSection(EntraIdSettings.Key).Bind(entraIdSettings);
+
 var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
-    .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
-    .WithEnvironment("AiFoundry:OpenAiBaseUrl", builder.Configuration["AiFoundry:OpenAiBaseUrl"])
-    .WithEnvironment("AiFoundry:AiFoundryProjectEndpoint", builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"]);
+    .WithEnvironment(AgentsSettings.Key, agentSettings.ToBase64String())
+    .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String());
+
 var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
+
 var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
-    .WithEnvironment("AiFoundry:ModelName", builder.Configuration["AiFoundry:ModelName"])
-    .WithEnvironment("AiFoundry:OpenAiBaseUrl", builder.Configuration["AiFoundry:OpenAiBaseUrl"])
-    .WithEnvironment("AiFoundry:AiFoundryProjectEndpoint", builder.Configuration["AiFoundry:AiFoundryProjectEndpoint"])
-    .WithEnvironment("McpServer:McpServerEndpoint", builder.Configuration["McpServer:McpServerEndpoint"])
-    .WithEnvironment("McpServer:McpServerApiKey", builder.Configuration["McpServer:McpServerApiKey"])
-    .WithEnvironment("CosmosDB:CosmosAccountEndpoint", builder.Configuration["CosmosDB:CosmosAccountEndpoint"])
-    .WithEnvironment("CosmosDB:CosmosDatabaseName", builder.Configuration["CosmosDB:CosmosDatabaseName"])
-    .WithEnvironment("CosmosDB:CosmosContainerName", builder.Configuration["CosmosDB:CosmosContainerName"])
-    .WithEnvironment("AzureAd:ClientId", builder.Configuration["AzureAd:ClientId"])
-    .WithEnvironment("AzureAd:TenantId", builder.Configuration["AzureAd:TenantId"])
-    .WithEnvironment("AzureAd:Instance", builder.Configuration["AzureAd:Instance"])
+    .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())
+    .WithEnvironment(McpServerSettings.Key, mcpServerSettings.ToBase64String())
+    .WithEnvironment(CosmosDbSettings.Key, cosmosDbSettings.ToBase64String())
+    .WithEnvironment(EntraIdSettings.Key, entraIdSettings.ToBase64String())
     .WithEnvironment("Frontend:Url", builder.Configuration["Frontend:Url"])
     .WithEnvironment("agentIds", builder.Configuration["agentIds"])
     .WaitForCompletion(agentProvisioner);
+
 var frontendApp = builder.AddNpmApp("frontend", "../frontend")
     .WithReference(chatApi)
     .WaitFor(chatApi)
