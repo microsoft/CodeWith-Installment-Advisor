@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallmentAdvisor.ChatApi"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallmentAdvisor.FoundryAgentProvisioner", "InstallmentAdvisor.FoundryAgentProvisioner\InstallmentAdvisor.FoundryAgentProvisioner.csproj", "{0D2E87B7-65B1-434D-A83F-75BDB3F12FBF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallmentAdvisor.Settings", "InstallmentAdvisor.Settings\InstallmentAdvisor.Settings.csproj", "{3479367D-5170-4759-9458-50DEA55D7A1D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{0D2E87B7-65B1-434D-A83F-75BDB3F12FBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D2E87B7-65B1-434D-A83F-75BDB3F12FBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D2E87B7-65B1-434D-A83F-75BDB3F12FBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3479367D-5170-4759-9458-50DEA55D7A1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3479367D-5170-4759-9458-50DEA55D7A1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3479367D-5170-4759-9458-50DEA55D7A1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3479367D-5170-4759-9458-50DEA55D7A1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

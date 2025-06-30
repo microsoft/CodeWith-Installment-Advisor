@@ -1,5 +1,6 @@
 ﻿using Azure.AI.Agents.Persistent;
 using InstallmentAdvisor.ChatApi.Models;
+using InstallmentAdvisor.Settings;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.AzureAI;
@@ -11,11 +12,13 @@ public class AgentService
 {
     private readonly PersistentAgentsClient _aiFoundryClient;
     private Dictionary<string, PersistentAgent> _persistentAgents;
+    private AgentsSettings _configuration;
 
-    public AgentService(PersistentAgentsClient aiFoundryClient, string[] agentIds, List<McpClientTool>? _tools)
+    public AgentService(PersistentAgentsClient aiFoundryClient, string[] agentIds, List<McpClientTool>? _tools, AgentsSettings configuration)
     {
         _aiFoundryClient = aiFoundryClient;
         _persistentAgents = new Dictionary<string, PersistentAgent>();
+        _configuration = configuration;
 
         foreach (var agentId in agentIds)
         {
@@ -40,7 +43,8 @@ public class AgentService
 
         if (threadId == null)
         {
-            return new AzureAIAgentThread(OrchestratorAgent.Client);
+            var thread = new AzureAIAgentThread(OrchestratorAgent.Client);
+            return thread;
         }
         else
         {
@@ -87,10 +91,29 @@ public class AgentService
 
     private void AddMcpTools(AzureAIAgent agent, List<McpClientTool>? tools)
     {
-        if (tools != null && tools.Count > 0)
+        var agentConfiguration = GetSettingsForAgent(agent.Name);
+        var toolsFound = agentConfiguration.AvailableMcpTools;
+        if (toolsFound != null && toolsFound.Count > 0 && tools != null && tools.Count > 0)
+        {
+            var selectedTools = tools
+                .Where(tool => toolsFound.Contains(tool.Name))
+                .Select(tool => tool.AsKernelFunction())
+                .ToList();
+
+            if (selectedTools.Count > 0)
+            {
+                agent.Kernel.Plugins.AddFromFunctions("MCP", selectedTools);
+            }
+        }
+        else if (tools != null && tools.Count > 0)
         {
             agent.Kernel.Plugins.AddFromFunctions("MCP", tools.Select(tool => tool.AsKernelFunction()));
         }
+    }
+
+    private AgentConfigurationSettings GetSettingsForAgent(string agentName)
+    {
+        return _configuration.Agents.Single(a => a.AgentName == agentName);
     }
 
     private static void RegisterSubAgents(AzureAIAgent agent, List<Agent>? subAgents)

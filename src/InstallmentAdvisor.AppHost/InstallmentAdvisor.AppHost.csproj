@@ -20,6 +20,7 @@
     <ProjectReference Include="..\ChatApi\InstallmentAdvisor.ChatApi.csproj" />
     <ProjectReference Include="..\InstallmentAdvisor.FoundryAgentProvisioner\InstallmentAdvisor.FoundryAgentProvisioner.csproj" />
     <ProjectReference Include="..\InstallmentAdvisorApi\InstallmentAdvisor.DataApi.csproj" />
+    <ProjectReference Include="..\InstallmentAdvisor.Settings\InstallmentAdvisor.Settings.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
 </Project>

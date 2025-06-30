@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ChatApi\InstallmentAdvisor.ChatApi.csproj" />
+    <ProjectReference Include="..\InstallmentAdvisor.Settings\InstallmentAdvisor.Settings.csproj" />
   </ItemGroup>
 
 </Project>
