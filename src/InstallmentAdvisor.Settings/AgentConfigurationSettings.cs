@@ -11,4 +11,8 @@ public class AgentConfigurationSettings
     public bool HasCodeInterpreterTool { get; set; }
 
     public List<string> AvailableMcpTools { get; set; }
+
+    public float Temperature { get; set; } = 1.0f;
+
+    public float TopP { get; set; }
 }

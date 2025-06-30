@@ -46,7 +46,7 @@ foreach (var agentConfiguration in agentsSettings.Agents)
 {
     string? configuredPrompt = agentConfiguration.Prompt;
 
-    bool hasCodeInterpreterTool = agentConfiguration.HasCodeInterpeterTool;
+    bool hasCodeInterpreterTool = agentConfiguration.HasCodeInterpreterTool;
 
     if (string.IsNullOrWhiteSpace(agentConfiguration.Prompt))
     {
@@ -64,10 +64,16 @@ foreach (var agentConfiguration in agentsSettings.Agents)
     if (existingAgentsDict.TryGetValue(agentConfiguration.AgentName, out var existingAgent))
     {
         // Agent exists, check if prompt matches
-        if (existingAgent.Instructions != configuredPrompt)
+        if (ShouldUpdateAgent(existingAgent, agentConfiguration, tools))
         {
             // Update agent with new prompt
-            await aiFoundryClient.Administration.UpdateAgentAsync(existingAgent.Id, instructions: agentConfiguration.Prompt, model: agentConfiguration.ModelName, tools: tools);
+            await aiFoundryClient.Administration.UpdateAgentAsync(existingAgent.Id, 
+                instructions: agentConfiguration.Prompt, 
+                model: agentConfiguration.ModelName, 
+                tools: tools, 
+                temperature: agentConfiguration.Temperature, 
+                topP: agentConfiguration.TopP
+            );
             Console.WriteLine($"Updated agent '{agentConfiguration.AgentName}' with new prompt.");
         }
         else
@@ -82,10 +88,36 @@ foreach (var agentConfiguration in agentsSettings.Agents)
             name: agentConfiguration.AgentName,
             model: agentConfiguration.ModelName,
             instructions: configuredPrompt,
-            tools: tools
+            tools: tools,
+            temperature: agentConfiguration.Temperature,
+            topP: agentConfiguration.TopP
         );
         Console.WriteLine($"Created agent '{agentConfiguration.AgentName}' with {createdAgent.Value.Id}.");
     }
 }
 
 Console.WriteLine("Agent Provisioner completed!");
+
+static bool ShouldUpdateAgent(dynamic existingAgent, AgentConfigurationSettings agentConfiguration, List<ToolDefinition> tools)
+{
+    if (existingAgent.Instructions != agentConfiguration.Prompt)
+        return true;
+    if (existingAgent.Model != agentConfiguration.ModelName)
+        return true;
+    if (existingAgent.Temperature != agentConfiguration.Temperature)
+        return true;
+    if (existingAgent.TopP != agentConfiguration.TopP)
+        return true;
+
+    if (existingAgent.Tools is IEnumerable<ToolDefinition> existingTools)
+    {
+        if (existingTools.Count() != tools.Count)
+            return true;
+        var existingTypes = existingTools.Select(t => t.GetType()).OrderBy(t => t.FullName).ToList();
+        var newTypes = tools.Select(t => t.GetType()).OrderBy(t => t.FullName).ToList();
+        if (!existingTypes.SequenceEqual(newTypes))
+            return true;
+    }
+
+    return false;
+}
