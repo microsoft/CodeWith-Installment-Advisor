@@ -32,23 +32,23 @@ function App() {
     document.body.classList.toggle('dark-mode', darkMode);
   }, [darkMode]);
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    const userMessage = { sender: 'user', text: input };
-    const currentInput = input;
+  const sendMessage = async (e, overrideInput) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const messageToSend = overrideInput !== undefined ? overrideInput : input;
+    if (!messageToSend.trim()) return;
+    const userMessage = { sender: 'user', text: messageToSend };
     setMessages((msgs) => [...msgs, userMessage]);
     setInput(''); // Clear input immediately
     setLoading(true);
-    
+
     // Add typing indicator
     const typingMessage = { sender: 'bot', text: '', isTyping: true };
     setMessages((msgs) => [...msgs, typingMessage]);
-    
+
     try {
       const body = {
         UserID: userId,
-        message: currentInput,
+        message: messageToSend,
         ...(threadId ? { threadId } : {})
       };
       const res = await fetch(API_ENDPOINT, {
@@ -58,12 +58,12 @@ function App() {
       });
       const data = await res.json();
       if (data.threadId) setThreadId(data.threadId);
-      
+
       // Remove typing indicator and add actual response
       setMessages((msgs) => [
         ...msgs.slice(0, -1), // Remove typing indicator
-        { 
-          sender: 'bot', 
+        {
+          sender: 'bot',
           text: data.reply || data.message || 'Geen antwoord ontvangen.',
           images: data.images || []
         }
@@ -79,6 +79,38 @@ function App() {
     }
   };
 
+  // Scenario cards data
+  const scenarioCards = [
+    {
+      text: 'Ik wil mijn termijnbedrag graag zo aanpassen dat ik aan het eind niet hoef bij te betalen.'
+    },
+    {
+      text: 'Welke energieprijzen betaal ik op dit moment'
+    },
+    {
+      text: 'Ik kreeg vorig jaar geld terug, maar toch stijgt mijn termijnbedrag. Waarom?'
+    }
+  ];
+
+  // Show scenario cards only if no user message has been sent yet
+  const hasUserChatted = messages.some(m => m.sender === 'user');
+
+  // Handler for scenario card click
+  const handleScenarioClick = (scenarioText) => {
+    if (loading) return;
+    setInput(scenarioText);
+    sendMessage({ preventDefault: () => {} }, scenarioText);
+  };
+
+  // Handler to start a new chat thread
+  const handleNewChat = () => {
+    setMessages([
+      { sender: 'bot', text: 'Welkom bij de Installment Advisor! Stel hier je vraag over je termijnbedrag.' }
+    ]);
+    setThreadId(null);
+    setInput('');
+  };
+
   return (
     <div className="chat-fullscreen">
       <div className="chat-topbar">
@@ -91,6 +123,20 @@ function App() {
             title={darkMode ? 'Licht modus' : 'Donkere modus'}
           >
             {darkMode ? '🌙' : '☀️'}
+          </button>
+          <button
+            className="icon-btn new-chat-icon-btn"
+            onClick={handleNewChat}
+            type="button"
+            title="Nieuw gesprek starten"
+            aria-label="Nieuw gesprek starten"
+            style={{ marginRight: 8 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              <path d="M7.5 11a3.5 3.5 0 1 1 3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <path d="M11 7.5V3.8M11 18.2v-3.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </button>
           <div className="user-menu-wrapper">
             <button
@@ -174,6 +220,24 @@ function App() {
             {loading ? '...' : 'Verstuur'}
           </button>
         </form>
+        {/* Scenario cards shown only before first user message, now below the message box */}
+        {!hasUserChatted && (
+          <div className="scenario-cards-row">
+            {scenarioCards.map((card, idx) => (
+              <button
+                key={idx}
+                className="scenario-card"
+                onClick={() => handleScenarioClick(card.text)}
+                type="button"
+                tabIndex={0}
+              >
+                {card.text.split(/(?<=\.) |(?<=\?) /).map((line, i) => (
+                  <span key={i} className="scenario-card-line">{line}</span>
+                ))}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
