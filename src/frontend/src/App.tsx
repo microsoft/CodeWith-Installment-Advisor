@@ -1,7 +1,6 @@
 import { makeStyles, tokens } from '@fluentui/react-components';
 import { TopBar, ChatMessages, ChatInput, ScenarioCards } from './components';
 import { useChat } from './hooks/useChat';
-import { useDarkMode } from './hooks/useDarkMode';
 import { ChatHeader } from 'components/ChatHeader';
 import { InfoSection } from 'components/InfoSection';
 
@@ -49,9 +48,13 @@ const useStyles = makeStyles({
     }
 });
 
-export function App() {
+interface AppProps {
+    darkMode: boolean;
+    toggleDarkMode: () => void;
+}
+
+export function App({ darkMode, toggleDarkMode }: AppProps) {
     const styles = useStyles();
-    const { darkMode, toggleDarkMode } = useDarkMode();
     const {
         messages,
         loading,

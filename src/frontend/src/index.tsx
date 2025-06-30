@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { FluentProvider, BrandVariants, createLightTheme, createDarkTheme, Theme } from '@fluentui/react-components';
 import { App } from './App';
 import './index.css';
+import { useDarkMode } from 'hooks/useDarkMode';
 
 
 // CHANGEME: theming of the app.
@@ -34,40 +35,11 @@ const darkTheme: Theme = {
 
 
 const Root: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = React.useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : false;
-  });
-
-  React.useEffect(() => {
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem('darkMode');
-      if (saved) {
-        setIsDarkMode(JSON.parse(saved));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    // Also listen for manual updates
-    const checkInterval = setInterval(() => {
-      const saved = localStorage.getItem('darkMode');
-      if (saved) {
-        const newValue = JSON.parse(saved);
-        if (newValue !== isDarkMode) {
-          setIsDarkMode(newValue);
-        }
-      }
-    }, 100);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(checkInterval);
-    };
-  }, [isDarkMode]);
+  const { darkMode, toggleDarkMode } = useDarkMode();
 
   return (
-    <FluentProvider theme={isDarkMode ? darkTheme : lightTheme}>
-      <App />
+    <FluentProvider theme={darkMode ? darkTheme : lightTheme}>
+      <App darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
     </FluentProvider>
   );
 };

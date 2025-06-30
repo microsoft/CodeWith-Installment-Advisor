@@ -1,11 +1,11 @@
 import React from 'react';
 import {
     makeStyles,
+    tokens,
     Accordion,
     AccordionItem,
     AccordionHeader,
-    AccordionPanel,
-    tokens,
+    AccordionPanel
 } from '@fluentui/react-components';
 
 
