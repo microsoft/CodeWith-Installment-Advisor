@@ -38,6 +38,8 @@ public class AgentService
     public AzureAIAgent InstallmentRuleEvaluationAgent { get; private set; } = null!;
     public AzureAIAgent OrchestratorAgent { get; private set; } = null!;
 
+    public AzureAIAgent UpdateInstallmentAmountAgent { get; set; }
+
     public AzureAIAgentThread GetOrCreateThread(string? threadId)
     {
 
@@ -55,7 +57,7 @@ public class AgentService
     public AzureAIAgent CreateOrchestratorAgentWithImageFilter(List<string> images)
     {
         AzureAIAgent agent = new(_persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], _aiFoundryClient);
-        RegisterSubAgents(agent, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
+        RegisterSubAgents(agent, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent, UpdateInstallmentAmountAgent });
         agent.Kernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
         return agent;
     }
@@ -65,12 +67,23 @@ public class AgentService
         ScenarioAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.SCENARIO_AGENT_NAME], _tools);
         VisualizationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.VISUALIZATION_AGENT_NAME], _tools);
         InstallmentRuleEvaluationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.INSTALLMENT_RULE_EVALUATION_AGENT_NAME], _tools);
-        OrchestratorAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent }, null);
+        UpdateInstallmentAmountAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.UPDATE_INSTALLMENT_AMOUNT_AGENT_NAME], _tools, new List<Agent> { InstallmentRuleEvaluationAgent });
+        OrchestratorAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent, UpdateInstallmentAmountAgent }, null);
     }
 
     private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools)
     {
         AzureAIAgent agent = new(agentDefinition, client);
+        AddMcpTools(agent, tools);
+
+        return agent;
+    }
+
+    private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools, List<Agent>? subAgents)
+    {
+        AzureAIAgent agent = new(agentDefinition, client);
+
+        RegisterSubAgents(agent, subAgents);
         AddMcpTools(agent, tools);
 
         return agent;
