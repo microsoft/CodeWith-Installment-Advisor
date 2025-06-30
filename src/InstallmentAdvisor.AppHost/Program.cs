@@ -27,6 +27,7 @@ var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api"
 var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())
     .WithEnvironment(McpServerSettings.Key, mcpServerSettings.ToBase64String())
+    .WithEnvironment(AgentsSettings.Key, agentSettings.ToBase64String())
     .WithEnvironment(CosmosDbSettings.Key, cosmosDbSettings.ToBase64String())
     .WithEnvironment(EntraIdSettings.Key, entraIdSettings.ToBase64String())
     .WithEnvironment("Frontend:Url", builder.Configuration["Frontend:Url"])

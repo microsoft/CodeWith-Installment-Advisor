@@ -111,7 +111,8 @@ builder.Services.AddSingleton<IHistoryRepository, CosmosHistoryRepository>();
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 var agentIds = builder.Configuration["agentIds"]?.Split(';') ?? Array.Empty<string>();
-var agentService = new AgentService(aiFoundryClient, agentIds, tools, builder.Configuration);
+var agentsSettings = AgentsSettings.FromBase64String(builder.Configuration[AgentsSettings.Key]!);
+var agentService = new AgentService(aiFoundryClient, agentIds, tools, agentsSettings);
 builder.Services.AddSingleton(agentService);
 
 var app = builder.Build();
