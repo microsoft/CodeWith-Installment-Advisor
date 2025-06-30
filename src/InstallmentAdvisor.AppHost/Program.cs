@@ -39,9 +39,7 @@ var frontendApp = builder.AddNpmApp("frontend", "../frontend")
     .WaitFor(chatApi)
     .WithEnvironment("HTTPS", "true")
     .WithEnvironment("REACT_APP_CHAT_API", chatApi.GetEndpoint("https"))
-    .WithHttpEndpoint(env: "PORT")
     .WithExternalHttpEndpoints();
 
 builder.Build().Run();
-
 
