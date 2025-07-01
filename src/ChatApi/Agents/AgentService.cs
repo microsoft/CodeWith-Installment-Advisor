@@ -1,4 +1,4 @@
-﻿using Azure.AI.Agents.Persistent;
+using Azure.AI.Agents.Persistent;
 using InstallmentAdvisor.Settings;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -88,6 +88,16 @@ public class AgentService
         return agent;
     }
 
+    private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools, List<Agent>? subAgents)
+    {
+        AzureAIAgent agent = new(agentDefinition, client);
+
+        RegisterSubAgents(agent.Kernel, null, subAgents);
+        AddMcpTools(agent, tools);
+
+        return agent;
+    }
+
     private void AddMcpTools(AzureAIAgent agent, List<McpClientTool>? tools)
     {
         if(agent.Name == null)
@@ -119,7 +129,7 @@ public class AgentService
         return _configuration.Agents.Single(a => a.AgentName == agentName);
     }
 
-    private static void RegisterSubAgents(Kernel kernel, AzureAIAgentThread aiAgentThread, List<Agent>? subAgents)
+    private static void RegisterSubAgents(Kernel kernel, AzureAIAgentThread? aiAgentThread, List<Agent>? subAgents)
     {
         if (subAgents != null && subAgents.Count > 0)
         {
