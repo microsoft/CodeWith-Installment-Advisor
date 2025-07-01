@@ -1,11 +1,8 @@
 using Azure.AI.Agents.Persistent;
-using Azure.Core;
 using Azure.Identity;
-using Microsoft.Identity.Web;
 using InstallmentAdvisor.ChatApi.Agents;
 using InstallmentAdvisor.ChatApi.Helpers;
 using InstallmentAdvisor.ChatApi.Repositories;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents.AzureAI;

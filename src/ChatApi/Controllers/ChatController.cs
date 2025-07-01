@@ -55,11 +55,13 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             StringBuilder responseBuilder = new();
             
             List<string> images = [];
-            ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images);
 
-            // Get or create thread.
-            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, chatRequest.ThreadId);
-            //AzureAIAgentThread aiAgentThread = _agentService.GetOrCreateThread(chatRequest.ThreadId);
+            // Get or create thread for the orchestrator agent, reuse ai foundry thread id for coupling.
+            AzureAIAgentThread aiAgentThread = await _agentService.GetOrCreateThreadAsync(chatRequest.ThreadId);
+            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, aiAgentThread.Id);
+
+            // Orchestrator agent + thread for sub agents.
+            ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images, aiAgentThread);
 
             var chatMessages = new List<ChatMessageContent>();
 
@@ -78,7 +80,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
 
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;
-                response.threadId = chatResponse.Thread.Id;
+                response.threadId = aiAgentThread.Id;
 
                 if (chatRequest.Debug == true)
                 {
@@ -91,7 +93,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 returnValue = Ok(response);
             }else
             {
-                SetupEventStreamHeaders(thread.Id!);
+                SetupEventStreamHeaders(aiAgentThread.Id!);
                 bool responseStarted = false;
                 await Response.WriteAsync("[STARTED]");
                 await Response.Body.FlushAsync();
@@ -121,8 +123,8 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             }
 
             // Save chat history to repository.
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, thread.Id!, chatRequest.Message, "user");
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, thread.Id!, responseBuilder.ToString(), "assistant");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, chatRequest.Message, "user");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, responseBuilder.ToString(), "assistant");
 
             return returnValue;
             
@@ -136,8 +138,10 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 return BadRequest("ThreadId and UserId are required.");
             }
             bool deleted = await _historyRepository.DeleteHistoryAsync(userId, threadId);
+            bool foundryThreadDeleted = await _aiFoundryClient.Threads.DeleteThreadAsync(threadId);
 
-            if (deleted)
+
+            if (deleted && foundryThreadDeleted)
             {
                 return Ok();
             }

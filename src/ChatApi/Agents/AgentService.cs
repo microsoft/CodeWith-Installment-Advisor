@@ -35,14 +35,29 @@ public class AgentService
     public AzureAIAgent ScenarioAgent { get; private set; } = null!;
     public AzureAIAgent VisualizationAgent { get; private set; } = null!;
     public AzureAIAgent InstallmentRuleEvaluationAgent { get; private set; } = null!;
+    public async Task<AzureAIAgentThread> GetOrCreateThreadAsync(string? threadId)
+    {
 
-    public ChatCompletionAgent CreateOrchestratorAgent(Kernel kernel, List<string> images)
+        if (threadId == null)
+        {
+            // Create thread manually to ensure it is created with threadId.
+            var aiFoundryThread = await _aiFoundryClient.Threads.CreateThreadAsync();
+            var thread = new AzureAIAgentThread(_aiFoundryClient, aiFoundryThread.Value.Id);
+            return thread;
+        }
+        else
+        {
+            return new AzureAIAgentThread(_aiFoundryClient, threadId);
+        }
+    }
+
+    public ChatCompletionAgent CreateOrchestratorAgent(Kernel kernel, List<string> images, AzureAIAgentThread aiAgentThread)
     {
         var settings = GetSettingsForAgent("orchestrator-agent");
         Kernel agentKernel = kernel.Clone();
 
         List<KernelFunction> subAgents = new List<KernelFunction>();
-        RegisterSubAgents(agentKernel, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
+        RegisterSubAgents(agentKernel, aiAgentThread, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
         agentKernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
         
         return new()
@@ -51,9 +66,8 @@ public class AgentService
             Description = "This agent orchestrates the conversation between the user and the AI agents.",
             Instructions = settings.Prompt,
             Kernel = agentKernel,
-            Arguments = new KernelArguments(new PromptExecutionSettings() { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
-        }
-        ;
+            Arguments = new KernelArguments(new PromptExecutionSettings() { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),  })
+        };
     }
 
     private void Initialize(List<McpClientTool>? _tools)
@@ -70,19 +84,6 @@ public class AgentService
 
         return agent;
     }
-
-    //private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<Agent>? subAgents, List<ToolCall>? toolCallList)
-    //{
-    //    AzureAIAgent agent = new(agentDefinition, client);
-
-    //    RegisterSubAgents(agent, subAgents);
-    //    if (toolCallList != null)
-    //    {
-    //        agent.Kernel.AutoFunctionInvocationFilters.Add(new AutoFunctionInvocationFilter(toolCallList));
-    //    }
-
-    //    return agent;
-    //}
 
     private void AddMcpTools(AzureAIAgent agent, List<McpClientTool>? tools)
     {
@@ -115,14 +116,14 @@ public class AgentService
         return _configuration.Agents.Single(a => a.AgentName == agentName);
     }
 
-    private static void RegisterSubAgents(Kernel kernel, List<Agent>? subAgents)
+    private static void RegisterSubAgents(Kernel kernel, AzureAIAgentThread aiAgentThread, List<Agent>? subAgents)
     {
         if (subAgents != null && subAgents.Count > 0)
         {
             List<KernelFunction> subAgentAsFunctions = new List<KernelFunction>();
             foreach (Agent subAgent in subAgents)
             {
-                subAgentAsFunctions.Add(AgentKernelFunctionFactory.CreateFromAgent(subAgent));
+                subAgentAsFunctions.Add(AgentAsToolFactory.CreateFromAgent(subAgent, aiAgentThread));
             }
             KernelPlugin agentPlugin = KernelPluginFactory.CreateFromFunctions("AgentsPlugin", subAgentAsFunctions);
             kernel.Plugins.Add(agentPlugin);
