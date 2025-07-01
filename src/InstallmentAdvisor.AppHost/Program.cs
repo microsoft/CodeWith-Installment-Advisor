@@ -37,11 +37,9 @@ var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api"
 var frontendApp = builder.AddNpmApp("frontend", "../frontend")
     .WithReference(chatApi)
     .WaitFor(chatApi)
-    .WithHttpsEndpoint()
     .WithEnvironment("HTTPS", "true")
     .WithEnvironment("REACT_APP_CHAT_API", chatApi.GetEndpoint("https"))
     .WithExternalHttpEndpoints();
 
 builder.Build().Run();
-
 

@@ -35,6 +35,8 @@ public class AgentService
     public AzureAIAgent ScenarioAgent { get; private set; } = null!;
     public AzureAIAgent VisualizationAgent { get; private set; } = null!;
     public AzureAIAgent InstallmentRuleEvaluationAgent { get; private set; } = null!;
+    public AzureAIAgent UpdateInstallmentAmountAgent { get; set; }
+
     public async Task<AzureAIAgentThread> GetOrCreateThreadAsync(string? threadId)
     {
 
@@ -57,7 +59,7 @@ public class AgentService
         Kernel agentKernel = kernel.Clone();
 
         List<KernelFunction> subAgents = new List<KernelFunction>();
-        RegisterSubAgents(agentKernel, aiAgentThread, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
+        RegisterSubAgents(agentKernel, aiAgentThread, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent, UpdateInstallmentAmountAgent });
         agentKernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
         
         return new()
@@ -75,6 +77,7 @@ public class AgentService
         ScenarioAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.SCENARIO_AGENT_NAME], _tools);
         VisualizationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.VISUALIZATION_AGENT_NAME], _tools);
         InstallmentRuleEvaluationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.INSTALLMENT_RULE_EVALUATION_AGENT_NAME], _tools);
+        UpdateInstallmentAmountAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.UPDATE_INSTALLMENT_AMOUNT_AGENT_NAME], _tools, new List<Agent> { InstallmentRuleEvaluationAgent });
     }
 
     private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools)
