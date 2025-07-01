@@ -55,24 +55,26 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             StringBuilder responseBuilder = new();
             
             List<string> images = [];
-            AzureAIAgent orchestratorAgent = _agentService.CreateOrchestratorAgentWithImageFilter(images);
+            ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images);
 
             // Get or create thread.
-            AzureAIAgentThread aiAgentThread = _agentService.GetOrCreateThread(chatRequest.ThreadId);
+            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, chatRequest.ThreadId);
+            //AzureAIAgentThread aiAgentThread = _agentService.GetOrCreateThread(chatRequest.ThreadId);
+
+            var chatMessages = new List<ChatMessageContent>();
+
+            if (string.IsNullOrEmpty(chatRequest.ThreadId))
+            {
+                chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
+                chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Today is {DateTime.UtcNow.ToString("yyyy-MM-dd")}"));
+            }
+
+            chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
 
             if (chatRequest.Stream != true)
             {
-                var chatMessages = new List<ChatMessageContent>();
-
-                if (string.IsNullOrEmpty(chatRequest.ThreadId))
-                {
-                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
-                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Today is {DateTime.UtcNow.ToString("yyyy-MM-dd")}"));
-                }
-
-                chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
-
-                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, aiAgentThread).FirstAsync();
+                
+                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, thread).FirstAsync();
 
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;
@@ -89,12 +91,12 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 returnValue = Ok(response);
             }else
             {
-                SetupEventStreamHeaders(aiAgentThread.Id!);
+                SetupEventStreamHeaders(thread.Id!);
                 bool responseStarted = false;
                 await Response.WriteAsync("[STARTED]");
                 await Response.Body.FlushAsync();
 
-                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatRequest.Message, aiAgentThread))
+                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatMessages, thread))
                 {
                     string chunkString = chunk.ToString();
                     if(responseStarted == false)
@@ -119,8 +121,8 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             }
 
             // Save chat history to repository.
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, chatRequest.Message, "user");
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, responseBuilder.ToString(), "assistant");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, thread.Id!, chatRequest.Message, "user");
+            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, thread.Id!, responseBuilder.ToString(), "assistant");
 
             return returnValue;
             

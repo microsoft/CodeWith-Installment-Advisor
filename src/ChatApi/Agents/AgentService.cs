@@ -1,5 +1,4 @@
 ﻿using Azure.AI.Agents.Persistent;
-using InstallmentAdvisor.ChatApi.Models;
 using InstallmentAdvisor.Settings;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -36,28 +35,25 @@ public class AgentService
     public AzureAIAgent ScenarioAgent { get; private set; } = null!;
     public AzureAIAgent VisualizationAgent { get; private set; } = null!;
     public AzureAIAgent InstallmentRuleEvaluationAgent { get; private set; } = null!;
-    public AzureAIAgent OrchestratorAgent { get; private set; } = null!;
 
-    public AzureAIAgentThread GetOrCreateThread(string? threadId)
+    public ChatCompletionAgent CreateOrchestratorAgent(Kernel kernel, List<string> images)
     {
+        var settings = GetSettingsForAgent("orchestrator-agent");
+        Kernel agentKernel = kernel.Clone();
 
-        if (threadId == null)
+        List<KernelFunction> subAgents = new List<KernelFunction>();
+        RegisterSubAgents(agentKernel, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
+        agentKernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
+        
+        return new()
         {
-            var thread = new AzureAIAgentThread(OrchestratorAgent.Client);
-            return thread;
+            Name = "orchestratoragent",
+            Description = "This agent orchestrates the conversation between the user and the AI agents.",
+            Instructions = settings.Prompt,
+            Kernel = agentKernel,
+            Arguments = new KernelArguments(new PromptExecutionSettings() { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
         }
-        else
-        {
-            return new AzureAIAgentThread(OrchestratorAgent.Client, threadId);
-        }
-    }
-
-    public AzureAIAgent CreateOrchestratorAgentWithImageFilter(List<string> images)
-    {
-        AzureAIAgent agent = new(_persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], _aiFoundryClient);
-        RegisterSubAgents(agent, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
-        agent.Kernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
-        return agent;
+        ;
     }
 
     private void Initialize(List<McpClientTool>? _tools)
@@ -65,7 +61,6 @@ public class AgentService
         ScenarioAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.SCENARIO_AGENT_NAME], _tools);
         VisualizationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.VISUALIZATION_AGENT_NAME], _tools);
         InstallmentRuleEvaluationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.INSTALLMENT_RULE_EVALUATION_AGENT_NAME], _tools);
-        OrchestratorAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.ORCHESTRATOR_AGENT_NAME], new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent }, null);
     }
 
     private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools)
@@ -76,21 +71,25 @@ public class AgentService
         return agent;
     }
 
-    private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<Agent>? subAgents, List<ToolCall>? toolCallList)
-    {
-        AzureAIAgent agent = new(agentDefinition, client);
+    //private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<Agent>? subAgents, List<ToolCall>? toolCallList)
+    //{
+    //    AzureAIAgent agent = new(agentDefinition, client);
 
-        RegisterSubAgents(agent, subAgents);
-        if (toolCallList != null)
-        {
-            agent.Kernel.AutoFunctionInvocationFilters.Add(new AutoFunctionInvocationFilter(toolCallList));
-        }
+    //    RegisterSubAgents(agent, subAgents);
+    //    if (toolCallList != null)
+    //    {
+    //        agent.Kernel.AutoFunctionInvocationFilters.Add(new AutoFunctionInvocationFilter(toolCallList));
+    //    }
 
-        return agent;
-    }
+    //    return agent;
+    //}
 
     private void AddMcpTools(AzureAIAgent agent, List<McpClientTool>? tools)
     {
+        if(agent.Name == null)
+        {
+            return;
+        }
         var agentConfiguration = GetSettingsForAgent(agent.Name);
         var toolsFound = agentConfiguration.AvailableMcpTools;
         if (toolsFound != null && toolsFound.Count > 0 && tools != null && tools.Count > 0)
@@ -116,7 +115,7 @@ public class AgentService
         return _configuration.Agents.Single(a => a.AgentName == agentName);
     }
 
-    private static void RegisterSubAgents(AzureAIAgent agent, List<Agent>? subAgents)
+    private static void RegisterSubAgents(Kernel kernel, List<Agent>? subAgents)
     {
         if (subAgents != null && subAgents.Count > 0)
         {
@@ -126,7 +125,7 @@ public class AgentService
                 subAgentAsFunctions.Add(AgentKernelFunctionFactory.CreateFromAgent(subAgent));
             }
             KernelPlugin agentPlugin = KernelPluginFactory.CreateFromFunctions("AgentsPlugin", subAgentAsFunctions);
-            agent.Kernel.Plugins.Add(agentPlugin);
+            kernel.Plugins.Add(agentPlugin);
         }
     }
 }

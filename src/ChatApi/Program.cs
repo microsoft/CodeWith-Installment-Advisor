@@ -38,7 +38,7 @@ builder.Services.AddOpenApi();
 var aiFoundrySettings = AiFoundrySettings.FromBase64String(builder.Configuration[AiFoundrySettings.Key]!);
 builder.Services.AddKernel().AddAzureOpenAIChatCompletion(
     aiFoundrySettings.ModelName, 
-    endpoint: aiFoundrySettings.AiFoundryProjectEndpoint, 
+    endpoint: aiFoundrySettings.OpenAiBaseUrl, 
     azureCredential
     );
 
