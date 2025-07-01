@@ -1,5 +1,6 @@
 ﻿using Azure.AI.Agents.Persistent;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
 
 namespace InstallmentAdvisor.ChatApi.Agents;
 public class ImageFilter(PersistentAgentsClient aiFoundryClient, List<string> images) : IFunctionInvocationFilter
@@ -16,7 +17,7 @@ public class ImageFilter(PersistentAgentsClient aiFoundryClient, List<string> im
 
         if (messages != null)
         {
-            var imageMessages = messages.Where(m => m.Items.Any(i => i.GetType() == typeof(FileReferenceContent)));
+            var imageMessages = messages.Where(m => m.Items.Any(i => i.GetType() == typeof(FileReferenceContent) || i.GetType() == typeof(AnnotationContent)));
 
             // For each nested item in imageMessages, get the fileid.
             foreach (var message in imageMessages)
@@ -32,7 +33,18 @@ public class ImageFilter(PersistentAgentsClient aiFoundryClient, List<string> im
                         var base64Contents = Convert.ToBase64String(bytearray);
                         _images.Add(base64Contents);
                     }
+                    if (item is AnnotationContent annotation)
+                    {
+                        // Process the file reference content as needed.
+                        var contents = await _aiFoundryClient.Files.GetFileContentAsync(annotation.ReferenceId);
+                        var bytearray = contents.Value.ToArray();
+                        // Add to list.
+                        var base64Contents = Convert.ToBase64String(bytearray);
+                        _images.Add(base64Contents);
+                    }
                 }
+
+                Console.WriteLine($"{_images.Count} images have been added.");
             }
         }
     }
