@@ -55,28 +55,32 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             StringBuilder responseBuilder = new();
             
             List<string> images = [];
-            AzureAIAgent orchestratorAgent = _agentService.CreateOrchestratorAgentWithImageFilter(images);
 
-            // Get or create thread.
-            AzureAIAgentThread aiAgentThread = _agentService.GetOrCreateThread(chatRequest.ThreadId);
+            // Get or create thread for the orchestrator agent, reuse ai foundry thread id for coupling.
+            AzureAIAgentThread aiAgentThread = await _agentService.GetOrCreateThreadAsync(chatRequest.ThreadId);
+            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, aiAgentThread.Id);
+
+            // Orchestrator agent + thread for sub agents.
+            ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images, aiAgentThread);
+
+            var chatMessages = new List<ChatMessageContent>();
+
+            if (string.IsNullOrEmpty(chatRequest.ThreadId))
+            {
+                chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
+                chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Today is {DateTime.UtcNow.ToString("yyyy-MM-dd")}"));
+            }
+
+            chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
 
             if (chatRequest.Stream != true)
             {
-                var chatMessages = new List<ChatMessageContent>();
-
-                if (string.IsNullOrEmpty(chatRequest.ThreadId))
-                {
-                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
-                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Today is {DateTime.UtcNow.ToString("yyyy-MM-dd")}"));
-                }
-
-                chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
-
-                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, aiAgentThread).FirstAsync();
+                
+                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, thread).FirstAsync();
 
                 dynamic response = new ExpandoObject();
                 response.message = chatResponse.Message.Content;
-                response.threadId = chatResponse.Thread.Id;
+                response.threadId = aiAgentThread.Id;
 
                 if (chatRequest.Debug == true)
                 {
@@ -94,7 +98,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 await Response.WriteAsync("[STARTED]");
                 await Response.Body.FlushAsync();
 
-                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatRequest.Message, aiAgentThread))
+                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatMessages, thread))
                 {
                     string chunkString = chunk.ToString();
                     if(responseStarted == false)
@@ -134,8 +138,10 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 return BadRequest("ThreadId and UserId are required.");
             }
             bool deleted = await _historyRepository.DeleteHistoryAsync(userId, threadId);
+            bool foundryThreadDeleted = await _aiFoundryClient.Threads.DeleteThreadAsync(threadId);
 
-            if (deleted)
+
+            if (deleted && foundryThreadDeleted)
             {
                 return Ok();
             }
