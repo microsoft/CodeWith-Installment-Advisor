@@ -7,5 +7,8 @@ namespace InstallmentAdvisor.DataApi.Models
         public double VatPerKwh { get; set; }
         public double GridChargePerDay { get; set; }
         public double TaxDiscountPerDay { get; set; }
+
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 }
