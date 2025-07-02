@@ -20,9 +20,9 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.53.0-preview.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="3.9.4" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.57.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.59.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.57.0-preview" />
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.57.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.59.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.57.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.Core" Version="1.57.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.57.0-preview" />

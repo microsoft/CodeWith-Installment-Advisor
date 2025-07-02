@@ -8,6 +8,7 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.AzureAI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using ModelContextProtocol.Client;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Text;
 
@@ -24,6 +25,8 @@ namespace InstallmentAdvisor.ChatApi.Controllers
         private readonly PersistentAgentsClient _aiFoundryClient;
         private readonly List<McpClientTool> _tools;
         private readonly IHistoryRepository _historyRepository;
+
+        private static ActivitySource source = new ActivitySource("InstallmentAdvisor.ChatApi", "1.0.0");
 
         public class ChatRequest
         {
@@ -56,75 +59,89 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             
             List<string> images = [];
 
-            // Get or create thread for the orchestrator agent, reuse ai foundry thread id for coupling.
-            AzureAIAgentThread aiAgentThread = await _agentService.GetOrCreateThreadAsync(chatRequest.ThreadId);
-            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, aiAgentThread.Id);
-
-            // Orchestrator agent + thread for sub agents.
-            ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images, aiAgentThread);
-
-            var chatMessages = new List<ChatMessageContent>();
-
-            if (string.IsNullOrEmpty(chatRequest.ThreadId))
-            {
-                chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
-                chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Today is {DateTime.UtcNow.ToString("yyyy-MM-dd")}"));
-            }
-
-            chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
-
-            if (chatRequest.Stream != true)
+            using (Activity activity = source.StartActivity("InitiateUserChat", ActivityKind.Internal))
             {
                 
-                AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, thread).FirstAsync();
+                // Get or create thread for the orchestrator agent, reuse ai foundry thread id for coupling.
+                AzureAIAgentThread aiAgentThread = await _agentService.GetOrCreateThreadAsync(chatRequest.ThreadId);
+                ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, aiAgentThread.Id);
 
-                dynamic response = new ExpandoObject();
-                response.message = chatResponse.Message.Content;
-                response.threadId = aiAgentThread.Id;
+                //annotate the activity
+                activity?.SetTag("userId", chatRequest.UserId);
+                activity?.SetTag("threadId", thread.Id);
+                activity?.SetTag("message", chatRequest.Message);
 
-                if (chatRequest.Debug == true)
+
+                // Orchestrator agent + thread for sub agents.
+                ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images, aiAgentThread);
+
+                var chatMessages = new List<ChatMessageContent>();
+
+                if (string.IsNullOrEmpty(chatRequest.ThreadId))
                 {
-                    response.toolCalls = toolCallInformation;
+                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Customer number is {chatRequest.UserId}"));
+                    chatMessages.Add(new ChatMessageContent(AuthorRole.Assistant, $"Today is {DateTime.UtcNow.ToString("yyyy-MM-dd")}"));
                 }
-                if (images != null && images.Count > 0)
-                {
-                    response.images = images;
-                }
-                returnValue = Ok(response);
-            }else
-            {
-                SetupEventStreamHeaders(aiAgentThread.Id!);
-                bool responseStarted = false;
-                await Response.WriteAsync("[STARTED]");
-                await Response.Body.FlushAsync();
 
-                await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatMessages, thread))
+                chatMessages.Add(new ChatMessageContent(AuthorRole.User, chatRequest.Message));
+
+                if (chatRequest.Stream != true)
                 {
-                    string chunkString = chunk.ToString();
-                    if(responseStarted == false)
+
+                    AgentResponseItem<ChatMessageContent> chatResponse = await orchestratorAgent.InvokeAsync(chatMessages, thread).FirstAsync();
+
+                    dynamic response = new ExpandoObject();
+                    response.message = chatResponse.Message.Content;
+                    response.threadId = aiAgentThread.Id;
+
+                    if (chatRequest.Debug == true)
                     {
-                        if(chunkString.Trim() != "")
+                        response.toolCalls = toolCallInformation;
+                    }
+                    if (images != null && images.Count > 0)
+                    {
+                        response.images = images;
+                    }
+
+                    
+
+                    returnValue = Ok(response);
+                }
+                else
+                {
+                    SetupEventStreamHeaders(aiAgentThread.Id!);
+                    bool responseStarted = false;
+                    await Response.WriteAsync("[STARTED]");
+                    await Response.Body.FlushAsync();
+
+                    await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatMessages, thread))
+                    {
+                        string chunkString = chunk.ToString();
+                        if (responseStarted == false)
                         {
-                            responseStarted = true;
-                            responseBuilder.Append(chunk);
+                            if (chunkString.Trim() != "")
+                            {
+                                responseStarted = true;
+                                responseBuilder.Append(chunk);
+                                await Response.WriteAsync(chunkString);
+                                await Response.Body.FlushAsync();
+                            }
+                        }
+                        else
+                        {
                             await Response.WriteAsync(chunkString);
                             await Response.Body.FlushAsync();
                         }
                     }
-                    else
-                    {
-                        await Response.WriteAsync(chunkString);
-                        await Response.Body.FlushAsync();
-                    }
+                    await Response.WriteAsync("[DONE]");
+                    await Response.Body.FlushAsync();
+                    returnValue = new EmptyResult();
                 }
-                await Response.WriteAsync("[DONE]");
-                await Response.Body.FlushAsync();
-                returnValue = new EmptyResult();
-            }
 
-            // Save chat history to repository.
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, chatRequest.Message, "user");
-            await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, responseBuilder.ToString(), "assistant");
+                // Save chat history to repository.
+                await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, chatRequest.Message, "user");
+                await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, responseBuilder.ToString(), "assistant");
+            }
 
             return returnValue;
             

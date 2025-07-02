@@ -1,3 +1,4 @@
+using Aspire.Hosting;
 using InstallmentAdvisor.Settings;
 using Microsoft.Extensions.Configuration;
 
@@ -18,9 +19,13 @@ builder.Configuration.GetSection(CosmosDbSettings.Key).Bind(cosmosDbSettings);
 var entraIdSettings = new EntraIdSettings();
 builder.Configuration.GetSection(EntraIdSettings.Key).Bind(entraIdSettings);
 
+var applicationInsightsSettings = new ApplicationInsightsSettings();
+builder.Configuration.GetSection(ApplicationInsightsSettings.Key).Bind(applicationInsightsSettings);
+
 var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
     .WithEnvironment(AgentsSettings.Key, agentSettings.ToBase64String())
-    .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String());
+    .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())
+    .WithEnvironment("EnvironmentName", builder.Environment.EnvironmentName);
 
 var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
 
@@ -32,6 +37,8 @@ var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api"
     .WithEnvironment(EntraIdSettings.Key, entraIdSettings.ToBase64String())
     .WithEnvironment("Frontend:Url", builder.Configuration["Frontend:Url"])
     .WithEnvironment("agentIds", builder.Configuration["agentIds"])
+    .WithEnvironment("APPLICATIONINSIGHTS_CONNECTION_STRING", applicationInsightsSettings.ConnectionString)
+    .WithEnvironment("EnvironmentName", builder.Environment.EnvironmentName)
     .WaitForCompletion(agentProvisioner);
 
 var frontendApp = builder.AddNpmApp("frontend", "../frontend")

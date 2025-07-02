@@ -1,0 +1,221 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "InstallmentAdvisor.DataApi | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://localhost:55288/"
+    }
+  ],
+  "paths": {
+    "/customers/{customerId}/usage": {
+      "get": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Get customer usage",
+        "description": "Get the usage history for the customer per month.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/customers/{customerId}/payments": {
+      "get": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Get customer payments",
+        "description": "Get the payment history for the customer, including dates and amounts.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/customers/{customerId}/endofyear-estimate": {
+      "get": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Get end-of-year estimate",
+        "description": "Get the end-of-year estimate for the customer, including usage and payments.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/customers/{customerId}/pricesheet": {
+      "get": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Get price sheet",
+        "description": "Get the current and historical price sheet for the customer.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/customers/{customerId}/contract": {
+      "get": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Get customer contract",
+        "description": "Get the contract details for the customer, start and end dates and energy types supplied to the customer.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/customers/{customerId}/installment": {
+      "get": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Get customer installments",
+        "description": "Get the installment history for the customer, including amount, currency, start date, frequency, and status.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "InstallmentAdvisor.DataApi"
+        ],
+        "summary": "Save installment",
+        "description": "Save the installment amount for the customer.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "InstallmentRequest": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "frequency": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "InstallmentAdvisor.DataApi"
+    }
+  ]
+}
