@@ -1,6 +1,6 @@
 ﻿namespace InstallmentAdvisor.Settings;
 
-public class ApplicationInsightsSettings : Base64SerializableSettings<AgentsSettings>
+public class ApplicationInsightsSettings
 {
     public const string Key = "ApplicationInsights";
 
