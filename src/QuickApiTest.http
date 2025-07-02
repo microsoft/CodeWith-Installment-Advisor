@@ -1,0 +1,15 @@
+
+
+POST https://localhost:55018/chat
+Accept: */*
+Content-Type: application/json
+
+{
+  "message":"What is the capital of France?",
+  "debug":true,
+  "stream": false,
+  "userid": "12345",
+  "threadid":""
+  
+
+}
