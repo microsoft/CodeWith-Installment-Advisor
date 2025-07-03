@@ -3,6 +3,7 @@ export interface ChatMessage {
   text: string;
   images?: string[];
   isTyping?: boolean;
+  typingInfo?: string;
 }
 
 export interface ScenarioCard {
@@ -13,6 +14,7 @@ export interface ChatApiRequest {
   UserID: string;
   message: string;
   threadId?: string;
+  stream?: boolean;
 }
 
 export interface ChatApiResponse {

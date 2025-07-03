@@ -58,7 +58,7 @@ namespace InstallmentAdvisor.ChatApi.Controllers
 
             // Get or create thread for the orchestrator agent, reuse ai foundry thread id for coupling.
             AzureAIAgentThread aiAgentThread = await _agentService.GetOrCreateThreadAsync(chatRequest.ThreadId);
-            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, aiAgentThread.Id);
+            ChatHistoryAgentThread thread = await BuildAgentThreadAsync(chatRequest.UserId, chatRequest.ThreadId);
 
             // Orchestrator agent + thread for sub agents.
             ChatCompletionAgent orchestratorAgent = _agentService.CreateOrchestratorAgent(_kernel, images, aiAgentThread);
@@ -93,21 +93,26 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                 returnValue = Ok(response);
             }else
             {
-                SetupEventStreamHeaders(aiAgentThread.Id!);
                 bool responseStarted = false;
-                await Response.WriteAsync("[STARTED]");
+                orchestratorAgent.Kernel.FunctionInvocationFilters.Add(new StreamingFilter(Response));
+
+                SetupEventStreamHeaders();
+                await Response.WriteAsync($"[STARTED THREAD]: {aiAgentThread.Id}");
                 await Response.Body.FlushAsync();
 
                 await foreach (StreamingChatMessageContent chunk in orchestratorAgent.InvokeStreamingAsync(chatMessages, thread))
                 {
+
                     string chunkString = chunk.ToString();
+
+
                     if(responseStarted == false)
                     {
                         if(chunkString.Trim() != "")
                         {
                             responseStarted = true;
                             responseBuilder.Append(chunk);
-                            await Response.WriteAsync(chunkString);
+                            await Response.WriteAsync($"[STARTED RESPONSE]: {chunkString}");
                             await Response.Body.FlushAsync();
                         }
                     }
@@ -117,15 +122,25 @@ namespace InstallmentAdvisor.ChatApi.Controllers
                         await Response.Body.FlushAsync();
                     }
                 }
-                await Response.WriteAsync("[DONE]");
-                await Response.Body.FlushAsync();
+
+                // Add images if generated.
+                if(images.Count > 0)
+                {
+                    foreach(var img in images)
+                    {
+                        string test = $"[IMAGE]: {img} [IMAGE_END]";
+                        await Response.WriteAsync(test);
+                        await Response.Body.FlushAsync();
+                    }
+                }
+
                 returnValue = new EmptyResult();
+                
             }
 
             // Save chat history to repository.
             await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, chatRequest.Message, "user");
             await _historyRepository.AddMessageToHistoryAsync(chatRequest.UserId, aiAgentThread.Id!, responseBuilder.ToString(), "assistant");
-
             return returnValue;
             
         }
@@ -137,9 +152,9 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             {
                 return BadRequest("ThreadId and UserId are required.");
             }
+
             bool deleted = await _historyRepository.DeleteHistoryAsync(userId, threadId);
             bool foundryThreadDeleted = await _aiFoundryClient.Threads.DeleteThreadAsync(threadId);
-
 
             if (deleted && foundryThreadDeleted)
             {
@@ -184,12 +199,11 @@ namespace InstallmentAdvisor.ChatApi.Controllers
             return new ChatHistoryAgentThread(); 
         }
 
-        private void SetupEventStreamHeaders(string threadId)
+        private void SetupEventStreamHeaders()
         {
             Response.Headers.Append("Content-Type", "text/event-stream");
             Response.Headers.Append("Cache-Control", "no-cache");
             Response.Headers.Append("Connection", "keep-alive");
-            Response.Headers.Append("x-thread-id", threadId);
         }
     }
 }
