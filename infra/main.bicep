@@ -34,8 +34,11 @@ param cosmosDBDatabaseName string = 'ChatHistory'
 @description('Name of the Cosmos DB container for chat history')
 param cosmosDBContainerName string = 'Messages'
 
+@description('Name of the AI Search service')
+param aiSearchName string = 'search-${uniqueString(resourceGroup().id)}'
+
 @description('Principal ID of the identity that will access Cosmos DB data')
-param cosmosDataPrincipalId string = deployer().objectId
+param principalId string = deployer().objectId
 
 var location = resourceGroup().location
 
@@ -75,6 +78,7 @@ module apiManagementInstallmentAdvisor 'modules/installment-api/installment-api.
     apiAudience: apiAudience
   }
 }
+
 module aiFoundry 'modules/aiFoundry.bicep' = {
   name: 'aiFoundry'
   params: {
@@ -110,6 +114,17 @@ module aiFoundry 'modules/aiFoundry.bicep' = {
           format: 'OpenAI'
         }
       }
+      {
+        name: 'text-embedding-ada-002'
+        sku: {
+          capacity: 100
+          name: 'GlobalStandard'
+        }
+        model: {
+          name: 'text-embedding-ada-002'
+          format: 'OpenAI'
+        }
+      }
     ]
   }
 }
@@ -142,7 +157,7 @@ module cosmosDB 'br/public:avm/res/document-db/database-account:0.15.0' = {
       {
         assignments: [
           {
-            principalId: cosmosDataPrincipalId
+            principalId: principalId
           }
         ]
         dataActions: [
@@ -153,6 +168,17 @@ module cosmosDB 'br/public:avm/res/document-db/database-account:0.15.0' = {
         roleName: 'cosmos-sql-role'
       }
     ]
+  }
+}
+
+module aiSearch 'br/public:avm/res/search/search-service:0.10.0' = {
+  name: 'aiSearch'
+  params: {
+    name: aiSearchName
+    sku: 'basic'
+    location: resourceGroup().location
+    replicaCount: 1
+    partitionCount: 1
   }
 }
 

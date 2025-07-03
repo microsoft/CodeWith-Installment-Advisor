@@ -10,6 +10,9 @@ builder.Configuration.GetSection(AgentsSettings.Key).Bind(agentSettings);
 var aiFoundrySettings = new AiFoundrySettings();
 builder.Configuration.GetSection(AiFoundrySettings.Key).Bind(aiFoundrySettings);
 
+//var aiSearchSettings = new AiSearchSettings();
+//builder.Configuration.GetSection(AiSearchSettings.Key).Bind(aiSearchSettings);
+
 var mcpServerSettings = new McpServerSettings();
 builder.Configuration.GetSection(McpServerSettings.Key).Bind(mcpServerSettings);
 
@@ -25,6 +28,7 @@ builder.Configuration.GetSection(ApplicationInsightsSettings.Key).Bind(applicati
 var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
     .WithEnvironment(AgentsSettings.Key, agentSettings.ToBase64String())
     .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())
+    .WithEnvironment(AiSearchSettings.Key, aiSearchSettings.ToBase64String())
     .WithEnvironment("EnvironmentName", builder.Environment.EnvironmentName);
 
 var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
