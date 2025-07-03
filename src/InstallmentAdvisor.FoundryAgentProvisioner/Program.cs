@@ -1,12 +1,19 @@
-﻿using Azure.AI.Agents.Persistent;
+﻿using Azure;
+using Azure.AI.Agents.Persistent;
+using Azure.AI.OpenAI;
 using Azure.Identity;
+using Azure.Search.Documents;
+using Azure.Search.Documents.Indexes;
+using Azure.Search.Documents.Indexes.Models;
 using InstallmentAdvisor.ChatApi;
 using InstallmentAdvisor.ChatApi.Helpers;
+using InstallmentAdvisor.FoundryAgentProvisioner.Models;
+using InstallmentAdvisor.FoundryAgentProvisioner.Utils;
+using InstallmentAdvisor.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel.Agents.AzureAI;
-using InstallmentAdvisor.Settings;
 
-Console.WriteLine("Agent Provisioner starting...");
+Console.WriteLine("Provisioner starting...");
 
 // Build configuration provider
 IConfiguration configuration = new ConfigurationBuilder()
@@ -20,6 +27,8 @@ IConfiguration configuration = new ConfigurationBuilder()
 string environmentName = configuration["EnvironmentName"] ?? "Production";
 DefaultAzureCredentialOptions azureCredentialOptions = CredentialHelper.GetDefaultAzureCredentialOptions(environmentName);
 var azureCredential = new DefaultAzureCredential(azureCredentialOptions);
+
+Console.WriteLine("Agent Provisioning starting...");
 
 AiFoundrySettings aiFoundrySettings = AiFoundrySettings.FromBase64String(configuration[AiFoundrySettings.Key]!);
 
@@ -97,6 +106,113 @@ foreach (var agentConfiguration in agentsSettings.Agents)
 }
 
 Console.WriteLine("Agent Provisioner completed!");
+
+Console.WriteLine("Index Provisioning starting...");
+
+AzureAiSearchSettings aiSearchSettings = AzureAiSearchSettings.FromBase64String(configuration[AzureAiSearchSettings.Key]!);
+string indexName = aiSearchSettings.IndexName;
+string endpoint = aiSearchSettings.Endpoint;
+string embeddingModel = aiSearchSettings.EmbeddingDeploymentName;
+
+AzureKeyCredential credential = new AzureKeyCredential(aiSearchSettings.ApiKey);
+SearchIndexClient indexClient = new SearchIndexClient(new Uri(endpoint), credential);
+
+bool indexExists = true;
+try
+{
+    var index = await indexClient.GetIndexAsync(indexName);
+}
+catch(Exception e)
+{
+    indexExists = false;
+}
+
+if (indexExists == false)
+{
+    Console.WriteLine($"Index '{indexName}' does not exist, creating it...");
+
+    var vectorSearch = new VectorSearch
+    {
+        Algorithms =
+        {
+            new HnswAlgorithmConfiguration("hnsw-configuration")
+            {
+                Parameters = new HnswParameters
+                {
+                    Metric = VectorSearchAlgorithmMetric.Cosine,
+                    M = 10,
+                    EfConstruction = 400,
+                    EfSearch = 400
+                }
+            }
+        },
+        Profiles =
+        {
+            new VectorSearchProfile("vector-profile-embedding", "hnsw-configuration")
+        }
+    };
+
+    var newIndex = new SearchIndex(indexName)
+    {
+        Fields =
+    {
+        new SimpleField("id", SearchFieldDataType.String) { IsKey = true, IsFilterable = true, IsSortable = false, IsFacetable = false },
+        new SearchableField("content") { IsFilterable = true, IsSortable = true },
+        new SearchableField("title") { IsFilterable = true, IsSortable = true },
+        new SearchableField("summary") { IsFilterable = true, IsSortable = true },
+        new SearchableField("article") { IsFilterable = true, IsSortable = true, IsFacetable = true},
+        new SearchField("keywords", SearchFieldDataType.Collection(SearchFieldDataType.String)) { IsSearchable = true, IsFilterable = true, IsSortable = false },
+        new SearchField("content_vector", SearchFieldDataType.Collection(SearchFieldDataType.Single))
+        {
+            IsSearchable = true,
+            IsFilterable = false,
+            IsSortable = false,
+            IsFacetable = false,
+            IsKey = false,
+            IsStored = true,
+            VectorSearchDimensions = 1536,
+            VectorSearchProfileName = "vector-profile-embedding"
+        },
+       
+    },
+        Similarity = new BM25Similarity(),
+        VectorSearch = vectorSearch
+    };
+
+    await indexClient.CreateIndexAsync(newIndex);
+
+    SearchClient searchClient = new SearchClient(
+        new Uri(endpoint),
+        indexName,
+        credential
+    );
+
+    List<IndexDocument> docs = ParseJSONDocument.ParseJsonDocuments();
+
+    AzureOpenAIClient azureClient = new(new Uri(aiFoundrySettings.OpenAiBaseUrl),azureCredential);
+
+    var embeddingClient = azureClient.GetEmbeddingClient(embeddingModel);
+
+    // For each doc, generate an embedding.
+    foreach (var doc in docs)
+    {
+        if (doc.content_vector == null || doc.content_vector.Count == 0)
+        {
+            var embedding = await embeddingClient.GenerateEmbeddingAsync(doc.Content);
+            var embeddingArray = embedding.Value.ToFloats().ToArray();
+            doc.content_vector = embeddingArray.ToList();
+
+        }
+    }
+    await searchClient.UploadDocumentsAsync(docs);
+}
+else
+{
+    Console.WriteLine($"Index '{indexName}' already exists, skipping creation.");
+}
+
+Console.WriteLine("Index Provisioning completed!");
+
 
 static bool ShouldUpdateAgent(dynamic existingAgent, AgentConfigurationSettings agentConfiguration, List<ToolDefinition> tools)
 {

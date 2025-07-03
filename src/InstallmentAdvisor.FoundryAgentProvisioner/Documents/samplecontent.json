@@ -1,0 +1,42 @@
+[
+  {
+    "Id": "1",
+    "Content": "Q: What are renewable energy sources and why are they important?\nA: Renewable energy sources are natural resources that can be replenished naturally over time, such as solar, wind, hydroelectric, geothermal, and biomass energy. They are important because they produce little to no greenhouse gas emissions, help reduce dependence on fossil fuels, create jobs in emerging industries, and provide sustainable energy solutions for future generations. Unlike fossil fuels, renewable sources won't run out and help combat climate change.",
+    "Title": "Understanding Renewable Energy Sources",
+    "Summary": "Comprehensive overview of renewable energy sources and their importance for environmental sustainability and future energy security.",
+    "Article": "RE-101",
+    "Keywords": ["renewable energy", "solar", "wind", "sustainability", "climate change", "green energy", "environment"]
+  },
+  {
+    "Id": "2",
+    "Content": "Q: How do solar panels work and what are their benefits?\nA: Solar panels work by converting sunlight into electricity through photovoltaic cells. When sunlight hits the solar cells, it knocks electrons loose from atoms, generating a flow of electricity. The benefits include: reduced electricity bills, low maintenance costs, increased property value, environmental sustainability, energy independence, and long-term savings. Modern solar panels can last 25-30 years and have become increasingly efficient and affordable.",
+    "Title": "Solar Panel Technology and Benefits",
+    "Summary": "Detailed explanation of solar panel functionality and the various economic and environmental benefits of solar energy adoption.",
+    "Article": "SP-102",
+    "Keywords": ["solar panels", "photovoltaic", "electricity", "savings", "property value", "maintenance", "efficiency"]
+  },
+  {
+    "Id": "3",
+    "Content": "Q: What is energy efficiency and how can I improve it in my home?\nA: Energy efficiency means using less energy to provide the same level of service or output. To improve home energy efficiency: install LED lighting, upgrade to ENERGY STAR appliances, improve insulation, seal air leaks, use programmable thermostats, install energy-efficient windows, maintain HVAC systems regularly, and consider smart home technologies. These improvements can reduce energy bills by 10-30% and increase comfort while reducing environmental impact.",
+    "Title": "Home Energy Efficiency Improvements",
+    "Summary": "Practical guide to understanding energy efficiency and implementing cost-effective improvements to reduce home energy consumption.",
+    "Article": "EE-103",
+    "Keywords": ["energy efficiency", "LED lighting", "insulation", "HVAC", "smart home", "cost savings", "ENERGY STAR"]
+  },
+  {
+    "Id": "4",
+    "Content": "Q: What are the environmental impacts of different energy sources?\nA: Different energy sources have varying environmental impacts. Fossil fuels (coal, oil, gas) produce greenhouse gases, air pollution, and water contamination. Nuclear energy produces radioactive waste but low emissions. Renewable sources have minimal environmental impact during operation: solar and wind have no emissions during use, hydroelectric can affect local ecosystems, geothermal has minimal surface impact, and biomass is carbon-neutral when managed sustainably. The lifecycle environmental cost of renewables is significantly lower than fossil fuels.",
+    "Title": "Environmental Impact of Energy Sources",
+    "Summary": "Comparative analysis of environmental impacts across different energy sources including fossil fuels, nuclear, and renewables.",
+    "Article": "EI-104",
+    "Keywords": ["environmental impact", "fossil fuels", "greenhouse gases", "pollution", "nuclear energy", "lifecycle assessment", "carbon footprint"]
+  },
+  {
+    "Id": "5",
+    "Content": "Q: What is the future of energy storage and battery technology?\nA: Energy storage is crucial for renewable energy adoption. Current technologies include lithium-ion batteries, pumped hydro storage, compressed air systems, and emerging technologies like solid-state batteries, hydrogen storage, and grid-scale battery systems. Future developments focus on: increased energy density, longer lifespan, faster charging, reduced costs, improved safety, and better recyclability. Battery storage enables grid stability, electric vehicle adoption, and 24/7 renewable energy availability.",
+    "Title": "Future of Energy Storage and Battery Technology",
+    "Summary": "Exploration of current and emerging energy storage technologies and their role in enabling widespread renewable energy adoption.",
+    "Article": "ES-105",
+    "Keywords": ["energy storage", "battery technology", "lithium-ion", "grid stability", "electric vehicles", "hydrogen storage", "renewable integration"]
+  }
+]

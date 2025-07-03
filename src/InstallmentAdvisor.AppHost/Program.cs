@@ -28,6 +28,7 @@ builder.Configuration.GetSection(AzureAiSearchSettings.Key).Bind(azureAiSearchSe
 var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
     .WithEnvironment(AgentsSettings.Key, agentSettings.ToBase64String())
     .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())
+    .WithEnvironment(AzureAiSearchSettings.Key, azureAiSearchSettings.ToBase64String())
     .WithEnvironment("EnvironmentName", builder.Environment.EnvironmentName);
 
 var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api")
