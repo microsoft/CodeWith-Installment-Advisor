@@ -109,12 +109,12 @@ Console.WriteLine("Agent Provisioner completed!");
 
 Console.WriteLine("Index Provisioning starting...");
 
-//AiSearchSettings aiSearchSettings = AiSearchSettings.FromBase64String(configuration[AiSearchSettings.Key]!);
-string indexName = "aiSearchSettings.IndexName";
-string endpoint = "aiSearchSettings.Endpoint";
-string embeddingModel = "aiSearchSettings.EmbeddingModel";
+AzureAiSearchSettings aiSearchSettings = AzureAiSearchSettings.FromBase64String(configuration[AzureAiSearchSettings.Key]!);
+string indexName = aiSearchSettings.IndexName;
+string endpoint = aiSearchSettings.Endpoint;
+string embeddingModel = aiSearchSettings.EmbeddingDeploymentName;
 
-AzureKeyCredential credential = new AzureKeyCredential("aiSearchSettings.Key");
+AzureKeyCredential credential = new AzureKeyCredential(aiSearchSettings.ApiKey);
 SearchIndexClient indexClient = new SearchIndexClient(new Uri(endpoint), credential);
 
 bool indexExists = true;
