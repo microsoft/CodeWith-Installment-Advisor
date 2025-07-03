@@ -5,7 +5,6 @@ public static class ParseJSONDocument
 {
     public static List<IndexDocument> ParseJsonDocuments()
     {
-        var path = Path.GetDirectoryName("Documents");
         string[] files = Directory.GetFiles("Documents");
         List<IndexDocument>? documents = new();
         foreach (string file in files)
