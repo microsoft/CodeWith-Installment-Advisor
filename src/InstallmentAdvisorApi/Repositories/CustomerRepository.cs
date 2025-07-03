@@ -110,6 +110,15 @@ public class CustomerRepository : ICustomerRepository
         {
             var parts = line.Split(',');
             if (parts[0] != customerId) continue;
+
+            // Parse optional start and end dates (columns 11 and 12)
+            DateTime? startDate = null;
+            DateTime? endDate = null;
+            if (parts.Length > 11 && DateTime.TryParse(parts[11], out var parsedStart))
+                startDate = parsedStart;
+            if (parts.Length > 12 && DateTime.TryParse(parts[12], out var parsedEnd))
+                endDate = parsedEnd;
+
             return new PriceSheetResponse
             {
                 CustomerId = customerId,
@@ -121,14 +130,18 @@ public class CustomerRepository : ICustomerRepository
                         TaxPerKwh = double.Parse(parts[2], CultureInfo.InvariantCulture),
                         VatPerKwh = double.Parse(parts[3], CultureInfo.InvariantCulture),
                         GridChargePerDay = double.Parse(parts[4], CultureInfo.InvariantCulture),
-                        TaxDiscountPerDay = double.Parse(parts[5], CultureInfo.InvariantCulture)
+                        TaxDiscountPerDay = double.Parse(parts[5], CultureInfo.InvariantCulture),
+                        StartDate = startDate,
+                        EndDate = endDate
                     },
                     Gas = new GasPrice
                     {
                         BasePricePerM3 = double.Parse(parts[6], CultureInfo.InvariantCulture),
                         TaxPerM3 = double.Parse(parts[7], CultureInfo.InvariantCulture),
                         VatPerM3 = double.Parse(parts[8], CultureInfo.InvariantCulture),
-                        GridChargePerDay = double.Parse(parts[9], CultureInfo.InvariantCulture)
+                        GridChargePerDay = double.Parse(parts[9], CultureInfo.InvariantCulture),
+                        StartDate = startDate,
+                        EndDate = endDate
                     }
                 },
                 Currency = parts[10]
@@ -166,7 +179,7 @@ public class CustomerRepository : ICustomerRepository
         var file = Path.Combine(_dataPath, "installment.csv");
         var status = "scheduled";
         var line = string.Join(",",
-            customerId,
+            customerId != null ? customerId : request.CustomerId,
             request.Amount.ToString(CultureInfo.InvariantCulture),
             request.Currency,
             request.StartDate.ToString("yyyy-MM-dd"),
@@ -177,7 +190,7 @@ public class CustomerRepository : ICustomerRepository
         File.AppendAllText(file, line + "\n");
         return new InstallmentResponse
         {
-            CustomerId = customerId,
+            CustomerId = customerId != null ? customerId : request.CustomerId,
             Installment = new Installment
             {
                 Amount = request.Amount,

@@ -1,4 +1,4 @@
-﻿using Azure.AI.Agents.Persistent;
+using Azure.AI.Agents.Persistent;
 using InstallmentAdvisor.Settings;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
@@ -35,6 +35,8 @@ public class AgentService
     public AzureAIAgent ScenarioAgent { get; private set; } = null!;
     public AzureAIAgent VisualizationAgent { get; private set; } = null!;
     public AzureAIAgent InstallmentRuleEvaluationAgent { get; private set; } = null!;
+    public AzureAIAgent UpdateInstallmentAmountAgent { get; set; }
+
     public async Task<AzureAIAgentThread> GetOrCreateThreadAsync(string? threadId)
     {
 
@@ -57,7 +59,7 @@ public class AgentService
         Kernel agentKernel = kernel.Clone();
 
         List<KernelFunction> subAgents = new List<KernelFunction>();
-        RegisterSubAgents(agentKernel, aiAgentThread, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent });
+        RegisterSubAgents(agentKernel, aiAgentThread, new List<Agent> { ScenarioAgent, VisualizationAgent, InstallmentRuleEvaluationAgent, UpdateInstallmentAmountAgent });
         agentKernel.FunctionInvocationFilters.Add(new ImageFilter(_aiFoundryClient, images));
         
         return new()
@@ -75,11 +77,22 @@ public class AgentService
         ScenarioAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.SCENARIO_AGENT_NAME], _tools);
         VisualizationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.VISUALIZATION_AGENT_NAME], _tools);
         InstallmentRuleEvaluationAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.INSTALLMENT_RULE_EVALUATION_AGENT_NAME], _tools);
+        UpdateInstallmentAmountAgent = CreateAgent(_aiFoundryClient, _persistentAgents[AgentConstants.UPDATE_INSTALLMENT_AMOUNT_AGENT_NAME], _tools, new List<Agent> { InstallmentRuleEvaluationAgent });
     }
 
     private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools)
     {
         AzureAIAgent agent = new(agentDefinition, client);
+        AddMcpTools(agent, tools);
+
+        return agent;
+    }
+
+    private AzureAIAgent CreateAgent(PersistentAgentsClient client, PersistentAgent agentDefinition, List<McpClientTool>? tools, List<Agent>? subAgents)
+    {
+        AzureAIAgent agent = new(agentDefinition, client);
+
+        RegisterSubAgents(agent.Kernel, null, subAgents);
         AddMcpTools(agent, tools);
 
         return agent;
@@ -116,7 +129,7 @@ public class AgentService
         return _configuration.Agents.Single(a => a.AgentName == agentName);
     }
 
-    private static void RegisterSubAgents(Kernel kernel, AzureAIAgentThread aiAgentThread, List<Agent>? subAgents)
+    private static void RegisterSubAgents(Kernel kernel, AzureAIAgentThread? aiAgentThread, List<Agent>? subAgents)
     {
         if (subAgents != null && subAgents.Count > 0)
         {
