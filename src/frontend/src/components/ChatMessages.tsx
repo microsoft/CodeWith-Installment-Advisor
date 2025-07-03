@@ -19,9 +19,10 @@ const useStyles = makeStyles({
 
 interface ChatMessagesProps {
     messages: ChatMessageType[];
+    streaming: boolean;
 }
 
-export const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
+export const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, streaming }) => {
     const styles = useStyles();
     const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +44,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
     return (
         <div className={styles.container}>
             {messages.map((message, index) => (
-                <ChatMessage key={index} message={message} />
+                <ChatMessage key={index} message={message} streaming={streaming} />
             ))}
             <div ref={chatEndRef} />
         </div>

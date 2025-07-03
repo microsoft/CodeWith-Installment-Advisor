@@ -2,6 +2,7 @@ using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Azure.Search.Documents.Indexes;
+using InstallmentAdvisor.DataApi;
 using InstallmentAdvisor.DataApi.Models;
 using InstallmentAdvisor.DataApi.Repositories;
 using InstallmentAdvisor.DataApi.Services;
@@ -35,11 +36,16 @@ builder.Services.AddSingleton<ICustomerService, CustomerService>();
 builder.Services.AddSingleton<AzureAiSearchSettings>(aiSearchSettings);
 builder.Services.AddSingleton<ISearchService, SearchService>();
 
+builder.Services.AddMcpServer()
+    .WithTools<McpTools>()
+    .WithHttpTransport();
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+app.MapMcp();
 
 if(app.Environment.IsDevelopment())
 {

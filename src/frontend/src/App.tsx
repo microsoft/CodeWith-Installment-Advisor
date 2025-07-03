@@ -59,11 +59,13 @@ export function App({ darkMode, toggleDarkMode }: AppProps) {
         messages,
         loading,
         userId,
+        streaming,
         scenarioCards,
         hasUserChatted,
         sendMessage,
         startNewChat,
         resetUserId,
+        toggleStreaming,
     } = useChat(); return (
         <div className={styles.container}>
             <TopBar
@@ -71,6 +73,8 @@ export function App({ darkMode, toggleDarkMode }: AppProps) {
                 userId={userId}
                 onToggleDarkMode={toggleDarkMode}
                 onUserIdChange={resetUserId}
+                streaming={streaming}
+                onToggleStreaming={toggleStreaming}
             />
             <div className={styles.main}>
                 <InfoSection/>
@@ -79,7 +83,7 @@ export function App({ darkMode, toggleDarkMode }: AppProps) {
                         <ChatHeader
                             onNewChat={startNewChat}
                         />
-                        <ChatMessages messages={messages} />
+                        <ChatMessages messages={messages} streaming={streaming} />
                         {!hasUserChatted && (
                             <ScenarioCards
                                 scenarios={scenarioCards}

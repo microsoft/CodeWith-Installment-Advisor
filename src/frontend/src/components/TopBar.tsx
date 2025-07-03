@@ -6,10 +6,15 @@ import {
     Popover,
     PopoverSurface,
     PopoverTrigger,
+    Switch,
     tokens
 } from '@fluentui/react-components';
 import {
+    ArrowDownLeft24Regular,
     Person24Regular,
+    SendClock24Regular,
+    Stream24Regular,
+    StreamInput20Regular,
     WeatherMoon24Regular,
     WeatherSunny24Regular,
 } from '@fluentui/react-icons';
@@ -47,6 +52,8 @@ interface TopBarProps {
     onToggleDarkMode: () => void;
     onUserIdChange: (userId: string) => void;
     userId: string;
+    streaming: boolean;
+    onToggleStreaming: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -54,6 +61,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     onToggleDarkMode,
     onUserIdChange,
     userId,
+    streaming,
+    onToggleStreaming,
 }) => {
     const styles = useStyles();
 
@@ -61,6 +70,13 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className={styles.topbar}>
             <div className={styles.text}>Installment Advisor Sample App</div>
             <div className={styles.actions}>
+                <Button
+                    appearance="subtle"
+                    icon={streaming ? <Stream24Regular /> : <SendClock24Regular />}
+                    onClick={onToggleStreaming}
+                    className={styles.text}
+                    title={streaming ? 'Streaming' : 'No streaming'}
+                />
                 <Button
                     appearance="subtle"
                     icon={darkMode ? <WeatherMoon24Regular /> : <WeatherSunny24Regular />}
