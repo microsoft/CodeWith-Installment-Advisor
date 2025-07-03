@@ -55,7 +55,7 @@ public class AgentService
 
     public ChatCompletionAgent CreateOrchestratorAgent(Kernel kernel, List<string> images, AzureAIAgentThread aiAgentThread)
     {
-        var settings = GetSettingsForAgent("orchestrator-agent");
+        var settings = GetSettingsForAgent(AgentConstants.ORCHESTRATOR_AGENT_NAME);
         Kernel agentKernel = kernel.Clone();
 
         List<KernelFunction> subAgents = new List<KernelFunction>();

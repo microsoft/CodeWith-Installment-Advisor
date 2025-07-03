@@ -36,12 +36,28 @@ const useStyles = makeStyles({
     },
     typingIndicator: {
         display: 'flex',
-        alignItems: 'center',
-        gap: tokens.spacingHorizontalS,
+        flexDirection: 'column',
+        gap: tokens.spacingVerticalXS,
         padding: tokens.spacingVerticalM,
         backgroundColor: tokens.colorNeutralBackground3,
         borderRadius: tokens.borderRadiusMedium,
         minWidth: '120px',
+    },
+    toolCalls: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.spacingVerticalXXS,
+        marginBottom: tokens.spacingVerticalXS,
+    },
+    toolCall: {
+        fontSize: tokens.fontSizeBase200,
+        color: tokens.colorNeutralForeground2,
+        fontStyle: 'italic',
+    },
+    progressContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.spacingHorizontalS,
     },
     images: {
         display: 'flex',
@@ -93,16 +109,27 @@ const useStyles = makeStyles({
 
 interface ChatMessageProps {
     message: ChatMessageType;
+    streaming: boolean;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = ({ message, streaming }) => {
     const styles = useStyles();
 
+    // Loader including tool call info in case of streaming.
     if (message.isTyping) {
         return (
             <div className={`${styles.message} ${styles.botMessage}`}>
                 <div className={styles.typingIndicator}>
-                    <ProgressBar />
+                    {(streaming && message.typingInfo?.trim() != '') && (
+                        <div className={styles.toolCalls}>
+                            <div className={styles.toolCall}>
+                                {message.typingInfo}
+                            </div>
+                        </div>
+                    )}
+                    <div className={styles.progressContainer}>
+                        <ProgressBar />
+                    </div>
                 </div>
             </div>
         );

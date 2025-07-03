@@ -4,7 +4,6 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aab12a72-b22e-4399-9155-e9d6dd00302b</UserSecretsId>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,14 +17,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.53.0-preview.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.52.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="3.9.4" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.59.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.57.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.58.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.59.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.57.0-preview" />
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.Core" Version="1.57.0-preview" />
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.57.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.58.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.Core" Version="1.58.0-preview" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Runtime.InProcess" Version="1.58.0-preview" />
     <PackageReference Include="ModelContextProtocol" Version="0.2.0-preview.3" />
     <PackageReference Include="ModelContextProtocol-SemanticKernel" Version="0.0.1-preview-18" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
