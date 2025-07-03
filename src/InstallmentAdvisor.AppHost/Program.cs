@@ -25,13 +25,18 @@ builder.Configuration.GetSection(EntraIdSettings.Key).Bind(entraIdSettings);
 var applicationInsightsSettings = new ApplicationInsightsSettings();
 builder.Configuration.GetSection(ApplicationInsightsSettings.Key).Bind(applicationInsightsSettings);
 
+var azureAiSearchSettings = new AzureAiSearchSettings();
+builder.Configuration.GetSection(AzureAiSearchSettings.Key).Bind(azureAiSearchSettings);
+
 var agentProvisioner = builder.AddProject<Projects.InstallmentAdvisor_FoundryAgentProvisioner>("agent-provisioner")
     .WithEnvironment(AgentsSettings.Key, agentSettings.ToBase64String())
     .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())
     .WithEnvironment(AiSearchSettings.Key, aiSearchSettings.ToBase64String())
     .WithEnvironment("EnvironmentName", builder.Environment.EnvironmentName);
 
-var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api");
+var dataApi = builder.AddProject<Projects.InstallmentAdvisor_DataApi>("data-api")
+    .WithEnvironment(AzureAiSearchSettings.Key, azureAiSearchSettings.ToBase64String())
+    .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String());
 
 var chatApi = builder.AddProject<Projects.InstallmentAdvisor_ChatApi>("chat-api")
     .WithEnvironment(AiFoundrySettings.Key, aiFoundrySettings.ToBase64String())

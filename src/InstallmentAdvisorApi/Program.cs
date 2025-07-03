@@ -1,14 +1,40 @@
+using Azure;
+using Azure.AI.OpenAI;
+using Azure.Identity;
+using Azure.Search.Documents.Indexes;
 using InstallmentAdvisor.DataApi;
 using InstallmentAdvisor.DataApi.Models;
 using InstallmentAdvisor.DataApi.Repositories;
 using InstallmentAdvisor.DataApi.Services;
+using InstallmentAdvisor.Settings;
+using OpenAI.Embeddings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+var aiSearchSettings = AzureAiSearchSettings.FromBase64String(builder.Configuration[AzureAiSearchSettings.Key]!);
+
+var aiFounderySettings = AiFoundrySettings.FromBase64String(builder.Configuration[AiFoundrySettings.Key]!);
+
+builder.Services.AddSingleton<EmbeddingClient>(sp =>
+{
+    var endpoint = new Uri(aiFounderySettings.OpenAiBaseUrl);
+    var credential = new DefaultAzureCredential();
+    var azureOpenAIClient = new AzureOpenAIClient(endpoint, credential);
+    return azureOpenAIClient.GetEmbeddingClient(aiSearchSettings.EmbeddingDeploymentName);
+});
+
+builder.Services.AddSingleton<SearchIndexClient>(sp =>
+{
+    var endpoint = new Uri(aiSearchSettings.Endpoint);
+    var credential = new AzureKeyCredential(aiSearchSettings.ApiKey);
+    return new SearchIndexClient(endpoint, credential);
+});
 builder.Services.AddSingleton<ICustomerRepository>(sp => new CustomerRepository("Data"));
 builder.Services.AddSingleton<ICustomerService, CustomerService>();
+builder.Services.AddSingleton<AzureAiSearchSettings>(aiSearchSettings);
+builder.Services.AddSingleton<ISearchService, SearchService>();
 
 builder.Services.AddMcpServer()
     .WithTools<McpTools>()
@@ -81,5 +107,13 @@ app.MapPost("/customers/{customerId}/installment", (string customerId, Installme
 })
     .WithSummary("Save installment")
     .WithDescription("Save the installment amount for the customer.");
+
+app.MapGet("/search", async (string query, ISearchService service) =>
+{
+    var result = await service.SearchAsync(query);
+    return Results.Ok(result);
+})
+    .WithSummary("Search energy knowledge base")
+    .WithDescription("Search the energy knowledge base for relevant information.");
 
 app.Run();
