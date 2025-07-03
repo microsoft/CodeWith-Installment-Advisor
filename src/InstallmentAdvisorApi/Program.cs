@@ -1,3 +1,4 @@
+using InstallmentAdvisor.DataApi;
 using InstallmentAdvisor.DataApi.Models;
 using InstallmentAdvisor.DataApi.Repositories;
 using InstallmentAdvisor.DataApi.Services;
@@ -9,11 +10,16 @@ builder.AddServiceDefaults();
 builder.Services.AddSingleton<ICustomerRepository>(sp => new CustomerRepository("Data"));
 builder.Services.AddSingleton<ICustomerService, CustomerService>();
 
+builder.Services.AddMcpServer()
+    .WithTools<McpTools>()
+    .WithHttpTransport();
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+app.MapMcp();
 
 if(app.Environment.IsDevelopment())
 {
